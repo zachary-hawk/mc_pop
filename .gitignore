@@ -1,0 +1,5 @@
+Source/*.o
+Source/*.mod
+Source/*~
+Build/mc_pop.mpi
+Build/mc_pop.serial

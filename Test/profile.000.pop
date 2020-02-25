@@ -1,0 +1,611 @@
+ +==================================================================================+
+ |        888b     d888  .d8888b.          8888888b.   .d88888b.  8888888b.         |
+ |        8888b   d8888 d88P  Y88b         888   Y88b d88P" "Y88b 888   Y88b        |
+ |        88888b.d88888 888    888         888    888 888     888 888    888        |
+ |        888Y88888P888 888                888   d88P 888     888 888   d88P        |
+ |        888 Y888P 888 888                8888888P"  888     888 8888888P"         |
+ |        888  Y8P  888 888    888         888        888     888 888               |
+ |        888   "   888 Y88b  d88P         888        Y88b. .d88P 888               |
+ |        888       888  "Y8888P" 88888888 888         "Y88888P"  888               |
+ +==================================================================================+
+ |                                                                                  |
+ |                              P R O F I L E :  000                                |
+ |                                                                                  |
+ +==================================================================================+
+ |       Subroutine:                 Call Count:                  Time:             |
+ +==================================================================================+
+ |   mc_pop                                 1                      61.5621 s        |
+ |   pop_main                               1                      60.9217 s        |
+ |   life_allocate_babies                  31                       1.4624 s        |
+ |   life_init_pop                          2                       0.5970 s        |
+ |   life_redistribute                     60                       0.1447 s        |
+ |   comms_barrier                         60                       0.1427 s        |
+ |   comms_init                             1                       0.0406 s        |
+ |   comms_reduce_double                   31                       0.0018 s        |
+ |   io_initialise                          1                       0.0008 s        |
+ |   io_write_params                        1                       0.0007 s        |
+ |   io_header                              1                       0.0005 s        |
+ |   comms_reduce_int_array                61                       0.0005 s        |
+ |   comms_bcast_int_array                 60                       0.0004 s        |
+ |   comms_reduce_int                      61                       0.0002 s        |
+ |   io_read_life                           1                       0.0002 s        |
+ |   io_write_results                       1                       0.0002 s        |
+ |   comms_bcast_int                       30                       0.0002 s        |
+ |   io_read_param                          1                       0.0001 s        |
+ |   life_random                            1                       0.0001 s        |
+ |   comms_bcast_double                     1                       0.0001 s        |
+ |   io_survival                            1                       0.0001 s        |
+ |   comms_library_version                  1                       0.0000 s        |
+ |   comms_rank                             1                       0.0000 s        |
+ |   life_gaussian                          1                       0.0000 s        |
+ |   comms_size                             1                       0.0000 s        |
+ |   comms_reduce_log                       1                       0.0000 s        |
+ |   comms_version                          1                       0.0000 s        |
+ |   io_present                             1                       0.0000 s        |
+ |   comms_reduce_double_array              5                       0.0000 s        |
+ |   life_demographics                      8                       0.0000 s        |
+ +==================================================================================+
+ |   No. Subroutines Profiled :    30                                               |
+ |   Time Spent in COMMS      :     0.18687 s                                       |
+ |   Time Spent in IO         :   123.41102 s                                       |
+ +==================================================================================+
+ |                                    Call Log:                                     |
+ +==================================================================================+
+ |    o-> mc_pop                                                                    |
+ |     \                                                                            |
+ |      o-> comms_init                                                              |
+ |       \                                                                          |
+ |        o-> comms_rank                                                            |
+ |        o-> comms_size                                                            |
+ |       /                                                                          |
+ |      o-> comms_bcast_double                                                      |
+ |      o-> io_initialise                                                           |
+ |       \                                                                          |
+ |        o-> io_read_param                                                         |
+ |        o-> io_read_life                                                          |
+ |        o-> io_present                                                            |
+ |       /                                                                          |
+ |      o-> io_header                                                               |
+ |       \                                                                          |
+ |        o-> comms_library_version                                                 |
+ |        o-> comms_version                                                         |
+ |       /                                                                          |
+ |      o-> io_write_params                                                         |
+ |      o-> life_random                                                             |
+ |      o-> life_init_pop                                                           |
+ |      o-> life_init_pop                                                           |
+ |      o-> pop_main                                                                |
+ |       \                                                                          |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_gaussian                                                         |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> life_allocate_babies                                                  |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> life_redistribute                                                     |
+ |         \                                                                        |
+ |          o-> comms_barrier                                                       |
+ |          o-> comms_reduce_int_array                                              |
+ |          o-> comms_bcast_int_array                                               |
+ |         /                                                                        |
+ |        o-> comms_reduce_int                                                      |
+ |        o-> comms_bcast_int                                                       |
+ |        o-> comms_reduce_double                                                   |
+ |        o-> comms_reduce_int                                                      |
+ |       /                                                                          |
+ |      o-> comms_reduce_int_array                                                  |
+ |      o-> comms_reduce_double_array                                               |
+ |      o-> comms_reduce_double_array                                               |
+ |      o-> comms_reduce_double_array                                               |
+ |      o-> comms_reduce_double_array                                               |
+ |      o-> comms_reduce_log                                                        |
+ |      o-> comms_reduce_double_array                                               |
+ |      o-> io_survival                                                             |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> life_demographics                                                       |
+ |      o-> io_write_results                                                        |
+ +==================================================================================+
