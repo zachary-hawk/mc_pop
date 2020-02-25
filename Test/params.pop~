@@ -1,9 +1,0 @@
-initial_population : 300e6
-duration : 130
-
-child_per_woman : 2.3
-
-life_table_year : 2012
-debug : t
-
-redistrib_freq : 1
