@@ -6,7 +6,6 @@ program mc_pop
   use comms
   use life
   implicit none 
-  integer                                :: one = 1
   logical                                :: warnings=.false.
   logical                                :: warnings_buff=.false.
   type(human),dimension(:),allocatable   :: population_men
@@ -35,7 +34,7 @@ program mc_pop
   real(dp),   dimension(:),allocatable   :: infant_mortality,  infant_buff
   real(dp),   dimension(:),allocatable   :: life_expect,       expect_buff
 
-
+  integer ::seed(0:0)
   ! The variable declaration for the results
   type(results)                          :: current_results
 
@@ -58,12 +57,16 @@ program mc_pop
   call io_initialise()
   call io_header()
 
-  ! Here we write all the parameters to the main output file
-  call io_write_params()
-
 
   ! Set up the random numbers, these should be on each process
+
   call life_random()
+  call random_seed(get=seed)
+
+  print*, seed,rank
+
+  ! Here we write all the parameters to the main output file
+  call io_write_params()
 
   ! before the calculations we can check if a dry run is required
   if (current_params%dry_run) call io_dryrun()

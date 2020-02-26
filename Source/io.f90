@@ -19,7 +19,10 @@ module io
   integer,           private,parameter     :: life_file = 189
   logical,           public                :: file_exists
   character(100),dimension(:),allocatable  :: present_array
-
+  integer                                  :: max_keys
+  character(100),dimension(1:max_keys)     :: keys_array
+  character(100),dimension(1:max_keys)     :: keys_description
+  
   integer                                  :: max_params=1
 
   type  parameters
@@ -36,8 +39,10 @@ module io
      !Some extra functionality
      logical          :: dry_run           = .false.
      logical          :: debug             = .false.
-     integer          :: redistrib_freq    = 10
+     integer          :: redistrib_freq    = calc_len/10
 
+     integer,dimension(0:0)          :: random_seed
+     
      !I/O parameters
      logical          :: write_population  = .true.
      logical          :: write_ave_age     = .false.
@@ -60,6 +65,8 @@ module io
   character(len=30),parameter,public :: key_write_pop        = "write_pop"
   character(len=30),parameter,public :: key_write_br         = "write_birth_rate"
   character(len=30),parameter,public :: key_write_age        = "write_ave_age"
+  character(len=30),parameter,public :: key_random_seed      = "random_seed"
+  
 
   type life_table
      real(dp),dimension(0:100)  :: life_data
@@ -151,6 +158,9 @@ contains
        current_params%redistrib_freq=current_params%calc_len/10
     end if
 
+    
+
+    
 
     ! Check there are enough people for the number of cores
     if (current_params%init_pop.gt.0 .and.&
@@ -264,6 +274,10 @@ contains
              present_array(i)=key
           case(key_redistrib_freq)
              read(param,*,iostat=stat) dummy_params%redistrib_freq
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_random_seed)
+             read(param,*,iostat=stat) dummy_params%random_seed(0)
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
 
@@ -493,7 +507,7 @@ contains
        do arg_index=1,nargs
           call get_command_argument(arg_index,name)
           select case(adjustl(trim(name)))
-          case('-h','--help')
+          case("--help")
              write(*,*) trim(version)
              write(*,*) trim(info)
              call io_help()
@@ -535,7 +549,7 @@ contains
     !==============================================================================!
 30  format(4x,A12,":",1x,A)
     write(*,30) adjustr("-v"),"Print version information."
-    write(*,30) adjustr("-h, --help"),"Get help and commandline options."
+    write(*,30) adjustr("--help"),"Get help and commandline options."
     write(*,30) adjustr("-l,--list"),"Get list of options avilible for the user."
     return
   end subroutine io_help
@@ -694,9 +708,9 @@ contains
     write(stdout,*)"+"//repeat("-",width-3)//"+"
     write(stdout,*) " "
 1000 FORMAT(1x,"|",30x,i2.2,":",i2.2,":",i2.2,",",1x,A,1x,i2.2,1x,i4,30x,"|")
-10  format(1x,A,T44,':',5x,I9,1x,A)    !integer
-11  format(1x,A,T44,":",5x,f9.2,1x,A)  !real
-12  format(1x,A,T44,":",5x,L9,1x,A)    !logical
+10  format(1x,A,T44,':',5x,I12,1x,A)    !integer
+11  format(1x,A,T44,":",5x,f12.2,1x,A)  !real
+12  format(1x,A,T44,":",5x,L12,1x,A)    !logical
 
 
 
@@ -745,7 +759,8 @@ contains
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
     write(stdout,10) "Redistribition Frequency",current_params%redistrib_freq, "years"
     write(stdout,12) "Profilling",current_params%debug
-
+    write(stdout,10) "Random Seed",current_params%random_seed(0)
+    
     sec_title="Parallelisation Parameters"
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)

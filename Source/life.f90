@@ -3,7 +3,7 @@
 module life
 
   use comms
-  use io,    only : current_params,stdout,dp,pi,current_lifetable
+  use io,    only : current_params,stdout,dp,pi,current_lifetable,io_present
   use trace, only : trace_exit,trace_entry
   implicit none
 
@@ -244,17 +244,27 @@ contains
     integer, allocatable :: seed(:)
     integer ::  n, un, istat
     call trace_entry("life_random")
+    allocate(seed(0:0))
 
+    if (on_root_node)then 
+       if (.not.io_present("random_seed"))then
+          call random_seed(size = n)
+          open(newunit=un, file="/dev/urandom", access="stream", &
+               form="unformatted", action="read", status="old", iostat=istat)
+          read(un) seed
+          close(un)
+          n=abs(seed(0))
+       else
 
-    call random_seed(size = n)
-    allocate(seed(n))
-    open(newunit=un, file="/dev/urandom", access="stream", &
-         form="unformatted", action="read", status="old", iostat=istat)
-    read(un) seed
-    close(un)
+          n=current_params%random_seed(0)
+          !print*,n
+       end if
+    end if
+    call comms_bcast(n,1)
+    seed(0)=n
+    current_params%random_seed=seed
 
-    call random_seed(put=seed)
-
+    call random_seed(put=current_params%random_seed+37*rank)
     call trace_exit("life_random")
     return
   end subroutine life_random
