@@ -326,7 +326,7 @@ contains
     name=trim(name)
 
     !check if the User has used a correct file, if not, cause error
-
+    
     inquire(file=trim(life_str)//"/life_tables/"//name,exist=file_exists)
 
     if (.not.file_exists) then
@@ -595,7 +595,7 @@ contains
 #endif
 #ifdef __GFORTRAN__
 #define compiler "GNU Fortran"
-#define version __VERSION__
+    !#define compile_version __VERSION__
 #endif
 
 
@@ -788,7 +788,7 @@ contains
 
        write(stdout,11) "Average Age",res%ave_age,"years"
        write(stdout,11) "Average Life Expectancy",res%life_expectancy,"years"
-       write(stdout,11) "Averge Teen Pregnacy Rate",res%teen_preg,"per 1000"
+       write(stdout,11) "Average Teen Pregnacy Rate",res%teen_preg,"per 1000"
        write(stdout,11) "Average Infant Mortality Rate",res%infant_mort,"per 1000"
        write(stdout,11) "Average Birth Rate",res%birth_rate,"per 1000"
 
@@ -891,5 +891,12 @@ contains
     call trace_exit("io_present")
   end function io_present
 
-
+  subroutine io_flush(unit)
+    implicit none
+    integer  :: unit
+    !call trace_entry("io_flush")
+    call flush(unit)
+    !call trace_exit("io_flush")
+    return 
+  end subroutine io_flush
 end module io

@@ -18,7 +18,7 @@ module COMMS
   ! Some of the stuff i'll need, gloabal
   integer,public,save                  :: rank
   integer,public,save                  :: nprocs
-  logical,public,save                  :: on_root_node
+  logical,public,save                  :: on_root_node=.true.
   
   character(6)                         :: comms_arch="SERIAL"
 
@@ -41,7 +41,7 @@ module COMMS
      module procedure COMMS_RECV_INT_ARRAY
      module procedure COMMS_RECV_REAL_ARRAY
      module procedure COMMS_RECV_DOUBLE_ARRAY
-  end interface comms_send
+  end interface 
 
 
   interface comms_reduce
@@ -51,16 +51,17 @@ module COMMS
      module procedure COMMS_REDUCE_INT_ARRAY
      module procedure COMMS_REDUCE_REAL_ARRAY
      module procedure COMMS_REDUCE_DOUBLE_ARRAY
+     module procedure COMMS_REDUCE_LOG
   end interface comms_reduce
   
-  interface comms_reduce
+  interface comms_bcast
      module procedure COMMS_BCAST_INT
      module procedure COMMS_BCAST_REAL
      module procedure COMMS_BCAST_DOUBLE
      module procedure COMMS_BCAST_INT_ARRAY
      module procedure COMMS_BCAST_REAL_ARRAY
      module procedure COMMS_BCAST_DOUBLE_ARRAY
-   end interface comms_reduce
+   end interface
 
 
 
@@ -595,6 +596,18 @@ contains
 
   !Reduce Routines
 
+  subroutine COMMS_REDUCE_LOG(send_buff,recv_buff,count,OP)
+    integer:: count
+    logical,intent(inout) :: recv_buff
+    logical :: send_buff
+    character(*) :: OP
+
+    call trace_entry("COMMS_REDUCE_LOG")
+        recv_buff=send_buff
+    call trace_exit("COMMS_REDUCE_LOG")
+  end subroutine COMMS_REDUCE_LOG
+
+
   subroutine COMMS_REDUCE_INT(send_buff,recv_buff,count,OP)
     !==============================================================================!
     !                       C O M M S _ R E D U C E _ I N T                        !
@@ -694,8 +707,7 @@ contains
     character(*) :: OP
 
     call trace_entry("COMMS_REDUCE_INT_ARRAY")
-    
-
+    recv_buff=send_buff
     call trace_exit("COMMS_REDUCE_INT_ARRAY")
   end subroutine COMMS_REDUCE_INT_ARRAY
 

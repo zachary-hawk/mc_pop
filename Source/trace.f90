@@ -276,7 +276,7 @@ contains
     if (.not.present(check_stack))then
        if (size(entry_array).ne.size(exit_array)) then
        
-       print*, "Error: trace array mismatch"
+       print*, "Error: trace d mismatch"
        stop
     end if
     end if

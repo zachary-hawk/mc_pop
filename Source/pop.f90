@@ -253,7 +253,8 @@ program mc_pop
         end if
 
      end if
-
+     ! Flush the cashe every year
+     call io_flush(stdout)
   end do
 
   ! print the final line of the table
@@ -263,6 +264,7 @@ program mc_pop
 
   ! Do some comms to sum up the arrays
 
+  
   call comms_reduce(total_count,total_buff,size(total_count),"MPI_SUM")
   call comms_reduce(teen_preg_array,teen_buff,size(teen_preg_array),"MPI_SUM")
   call comms_reduce(birth_rate_array,br_buff,size(birth_rate_array),"MPI_SUM")
@@ -275,19 +277,20 @@ program mc_pop
   ! Print out that the people are dead and theres no point doing anything
 
 
-  if (on_root_node) call io_survival(survived)
-
-
-
-  ! Handle the averaging
-  teen_buff=teen_buff/real(nprocs,dp)
-  age_buff=age_buff/real(nprocs,dp)
-  br_buff=br_buff/real(nprocs,dp)
-  infant_buff=infant_buff/real(nprocs,dp)
-  expect_buff=expect_buff/real(nprocs,dp)
-
-  ! Write out to the correct files
   if (on_root_node) then
+     call io_survival(survived)
+
+
+
+     ! Handle the averaging
+     teen_buff=teen_buff/real(nprocs,dp)
+     age_buff=age_buff/real(nprocs,dp)
+     br_buff=br_buff/real(nprocs,dp)
+     infant_buff=infant_buff/real(nprocs,dp)
+     expect_buff=expect_buff/real(nprocs,dp)
+
+     ! Write out to the correct files
+
      write(stdout,*) ""
      if (current_params%write_population) then 
         open(4,file="population.pop",status="unknown",form="unformatted")
@@ -307,25 +310,29 @@ program mc_pop
         write(6) br_buff
         close(6)
      end if
-  end if
 
 
-  ! Lets do some result writing to the file, how exciting
 
-  current_results%ave_age         =real(sum(age_buff)/size(age_buff),dp)
-  current_results%infant_mort     =real(sum(infant_buff)/size(infant_buff),dp)
-  current_results%teen_preg       =real(sum(teen_buff)/size(teen_buff),dp)
-  current_results%birth_rate      =real(sum(br_buff)/size(br_buff),dp)
-  current_results%lt_5            =life_demographics(population_men,population_women,0,5)
-  current_results%i10_20          =life_demographics(population_men,population_women,10,19)
-  current_results%i20_30          =life_demographics(population_men,population_women,20,29)
-  current_results%i30_40          =life_demographics(population_men,population_women,30,39)
-  current_results%i40_50          =life_demographics(population_men,population_women,40,49)
-  current_results%i50_65          =life_demographics(population_men,population_women,50,64)
-  current_results%i65_plus        =life_demographics(population_men,population_women,65,100)
-  current_results%i85_plus        =life_demographics(population_men,population_women,85,100)
-  current_results%life_expectancy =real(sum(expect_buff)/size(expect_buff),dp)
-  if (on_root_node) then
+
+
+     ! Lets do some result writing to the file, how exciting
+
+     current_results%ave_age         =real(sum(age_buff)/size(age_buff),dp)
+     current_results%infant_mort     =real(sum(infant_buff)/size(infant_buff),dp)
+     current_results%teen_preg       =real(sum(teen_buff)/size(teen_buff),dp)
+     current_results%birth_rate      =real(sum(br_buff)/size(br_buff),dp)
+     current_results%lt_5            =life_demographics(population_men,population_women,0,5)
+     current_results%i10_20          =life_demographics(population_men,population_women,10,19)
+     current_results%i20_30          =life_demographics(population_men,population_women,20,29)
+     current_results%i30_40          =life_demographics(population_men,population_women,30,39)
+     current_results%i40_50          =life_demographics(population_men,population_women,40,49)
+     current_results%i50_65          =life_demographics(population_men,population_women,50,64)
+     current_results%i65_plus        =life_demographics(population_men,population_women,65,100)
+     current_results%i85_plus        =life_demographics(population_men,population_women,85,100)
+     current_results%life_expectancy =real(sum(expect_buff)/size(expect_buff),dp)
+
+
+
      ! calculate the demographics 
 
 
@@ -356,7 +363,7 @@ program mc_pop
 
 
   if (on_root_node)then
-     time=time-start_time
+     !time=time-start_time
      efficiency=(1_dp-comms_time/time)*100_dp
      write(stdout,'(1x,"|",5x,"Total time: ",f10.2,1x,"s",52x,"|")')time
      if (nprocs.gt.1) write(stdout,'(1x,"|",5x,"Efficiency: ",f10.2,1x,"%",52x,"|")')Efficiency
