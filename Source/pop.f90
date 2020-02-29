@@ -63,7 +63,7 @@ program mc_pop
   call life_random()
   call random_seed(get=seed)
 
-  print*, seed,rank
+
 
   ! Here we write all the parameters to the main output file
   call io_write_params()

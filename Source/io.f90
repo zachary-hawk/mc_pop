@@ -10,7 +10,7 @@ module io
   implicit none
 
 
-  logical,           public                :: no_param
+  logical,           public                :: no_param,read_params=.true.
   character(len=128),public                :: version  = "MC_POP v.1.0, Z. Hawkhead"
   character(len=128),public                :: info     = "Parallel code for Monte Carlo Population simulation"
   integer,           public,parameter      :: stdout = 984 
@@ -19,9 +19,12 @@ module io
   integer,           private,parameter     :: life_file = 189
   logical,           public                :: file_exists
   character(100),dimension(:),allocatable  :: present_array
-  integer                                  :: max_keys
-  character(100),dimension(1:max_keys)     :: keys_array
-  character(100),dimension(1:max_keys)     :: keys_description
+  integer,parameter                        :: max_keys=12
+  character(100),dimension(:),allocatable  :: keys_array
+  character(100),dimension(:),allocatable  :: keys_description
+  character(100),dimension(:),allocatable  :: keys_default
+  character(100),dimension(:),allocatable  :: keys_allowed
+  character(100),dimension(:),allocatable  :: keys_type
   
   integer                                  :: max_params=1
 
@@ -39,10 +42,10 @@ module io
      !Some extra functionality
      logical          :: dry_run           = .false.
      logical          :: debug             = .false.
-     integer          :: redistrib_freq    = calc_len/10
+     integer          :: redistrib_freq    = 10
 
      integer,dimension(0:0)          :: random_seed
-     
+
      !I/O parameters
      logical          :: write_population  = .true.
      logical          :: write_ave_age     = .false.
@@ -53,11 +56,11 @@ module io
 
 
   character(len=30),parameter,public :: key_init_pop         = "initial_population"
-  character(len=30),parameter,public :: key_mean_child_age   = "child_age"
+  character(len=30),parameter,public :: key_mean_child_age   = "birth_age"
   character(len=30),parameter,public :: key_calc_len         = "duration"
   character(len=30),parameter,public :: key_life_table_year  = "life_table_year"
 
-  character(len=30),parameter,public :: key_child_norm       = "child_per_woman"
+  character(len=30),parameter,public :: key_child_norm       = "birth_rate"
   character(len=30),parameter,public :: key_child_sd         = "birth_std"
   character(len=30),parameter,public :: key_debug            = "debug"
   character(len=30),parameter,public :: key_redistrib_freq   = "redistrib_freq"
@@ -66,7 +69,7 @@ module io
   character(len=30),parameter,public :: key_write_br         = "write_birth_rate"
   character(len=30),parameter,public :: key_write_age        = "write_ave_age"
   character(len=30),parameter,public :: key_random_seed      = "random_seed"
-  
+
 
   type life_table
      real(dp),dimension(0:100)  :: life_data
@@ -146,7 +149,7 @@ contains
     allocate(present_array(0:max_params))
 
     ! Fist things first, try to read paramteters
-    call io_read_param(current_params)
+    if (read_params) call io_read_param(current_params)
 
 
     ! This is where intialise life tables, there will be a datatype in this file
@@ -158,9 +161,9 @@ contains
        current_params%redistrib_freq=current_params%calc_len/10
     end if
 
-    
 
-    
+
+
 
     ! Check there are enough people for the number of cores
     if (current_params%init_pop.gt.0 .and.&
@@ -171,7 +174,7 @@ contains
          & write(*,*) "Warning: Number of people per proccess is low, consider increasing"
 
     ! Open up the main file for the output
-    open(stdout,file="out.pop",RECL=8192,form="FORMATTED")
+    open(stdout,file="out.pop",RECL=8192,form="FORMATTED",access="append")
     !do some stuff about dry runs and commandline parsers here 
 
     call trace_exit("io_initialise")
@@ -340,7 +343,7 @@ contains
     name=trim(name)
 
     !check if the User has used a correct file, if not, cause error
-    
+
     inquire(file=trim(life_str)//"/life_tables/"//name,exist=file_exists)
 
     if (.not.file_exists) then
@@ -449,7 +452,7 @@ contains
     return
   end subroutine io_errors
 
-  function io_case( string ) result (new)
+  function io_case( string , upper) result (new)
     !==============================================================================!
     !                                I O _ C A S E                                 !
     !==============================================================================!
@@ -470,7 +473,8 @@ contains
 
     integer                    :: i 
     integer                    :: k 
-    integer::length
+    integer                    :: length
+    logical, optional          :: upper
 
     length = len(string)
     new    = string
@@ -482,6 +486,17 @@ contains
        end if
     end do
 
+    if (present(upper))then
+       if (upper) then
+          do i = 1,len(string)
+             k = iachar(string(i:i))
+             if ( k >= iachar('a') .and. k <= iachar('z') ) then
+                k = k + iachar('A') - iachar('a')
+                new(i:i) = achar(k)
+             end if
+          end do
+       end if
+    end if
   end function io_case
 
 
@@ -499,36 +514,57 @@ contains
     implicit none
     integer          ::   nargs     !Number of args
     integer          ::   arg_index !The index
-    character(10)    ::   name      !The name of the argument
+    character(50)    ::   name      !The name of the argument
 
+    logical          ::   search
+    logical          ::   help
     nargs=command_argument_count()
 
     if (nargs.gt.0)then
        do arg_index=1,nargs
+
           call get_command_argument(arg_index,name)
           select case(adjustl(trim(name)))
-          case("--help")
+          case("-h","--help")
              write(*,*) trim(version)
              write(*,*) trim(info)
-             call io_help()
-             stop
+             read_params=.false.
+             call io_list_params(.false.)
+             help=.true.
+          case("-s","--search")
+             write(*,*) trim(version)
+             write(*,*) trim(info)
+             write(*,*)
+             read_params=.false.
+             call io_list_params(.false.)
+             search=.true.
+
           case("-v")
              write(*,*) trim(version)
              write(*,*) trim(info)
+             read_params=.false.
              stop
           case("-d","--dryrun")
              current_params%dry_run=.true.
           case("-l","--list")
              write(*,*) trim(version)
              write(*,*) trim(info)
-
-             call io_list_params()
-             stop
+             read_params=.false.
+             call io_list_params(.true.)
           case default
-             write(*,*) "Unknown argument: ",adjustl(name)
-             write(*,*) trim(version)
-             write(*,*) trim(info)
-             call io_help()
+             if (help)then
+                call io_help(name)
+                help=.false.
+             elseif(search)then 
+                call io_search(name)
+                search=.false.
+                stop
+             else
+                write(*,*) "Unknown argument: ",adjustl(name)
+                write(*,*) trim(version)
+                write(*,*) trim(info)
+                call io_help()
+             end if
              stop
           end select
        end do
@@ -536,7 +572,7 @@ contains
     return
   end subroutine io_cl_parser
 
-  subroutine io_help()
+  subroutine io_help(string)
     !==============================================================================!
     !                                I O _ H E L P                                 !
     !==============================================================================!
@@ -547,26 +583,165 @@ contains
     !------------------------------------------------------------------------------!
     ! Author:   Z. Hawkhead  03/02/2020                                            !
     !==============================================================================!
-30  format(4x,A12,":",1x,A)
-    write(*,30) adjustr("-v"),"Print version information."
-    write(*,30) adjustr("--help"),"Get help and commandline options."
-    write(*,30) adjustr("-l,--list"),"Get list of options avilible for the user."
+    implicit none
+    character(*),optional   :: string
+    integer                 :: i !counter
+    logical                 :: found=.false.
+    if (present(string))then
+
+       do i=1,max_keys
+          if (trim(keys_array(i)).eq.io_case(trim(string))) then
+             found=.true.
+             write(*,*)
+             write(*,12) repeat("*",70-len(keys_array(i))/2),&
+                  & trim(io_case(keys_array(i),upper=.true.)),repeat("*",70-len(keys_array(i))/2)
+             write(*,*) trim(keys_description(i))
+             write(*,*)
+             write(*,*) "Allowed Values: ",trim(keys_allowed(i))
+             write(*,*) "Default:        ",trim(keys_default(i))
+             write(*,*)
+12           format(1x,a,1x,a,1x,a)
+
+             exit
+          end if
+       end do
+       if (.not.found)then
+          write(*,*)
+          write(*,*) "************** NO MATCHING PARAMETERS **************"
+          write(*,*)
+       end if
+    else 
+30     format(4x,A,T40,A)
+       write(*,30) "-v","Print version information."
+       write(*,30) "-h,--help   <keyword>","Get help and commandline options."
+       write(*,30) "-s,--search <keyword>", "Search list of available parameters"
+       write(*,30) "-l,--list","Get list of parameters avilable for the user."
+    end if
     return
   end subroutine io_help
 
 
-  subroutine io_list_params()
-    !==============================================================================!
-    !                         I O _ L I S T _ P A R A M S                          !
-    !==============================================================================!
-    ! Subroutine for printing the list of availible parameters and their           !
-    ! defaults.                                                                    !
-    !------------------------------------------------------------------------------!
-    ! Arguments:                                                                   !
-    !           None                                                               !
-    !------------------------------------------------------------------------------!
-    ! Author:   Z. Hawkhead  03/02/2020                                            !
-    !==============================================================================!
+  subroutine io_search(string)
+    implicit none
+    character(*)     :: string
+    logical          :: found
+    integer          :: i,scan_res
+
+    do i=1,max_keys
+       scan_res=index(trim(keys_array(i)),trim(string))
+       
+       if (scan_res.gt.0)then
+          found=.true.
+100       format(1x,A,T35,A)
+          write(*,100)io_case(keys_array(i),.true.),keys_description(i)
+       end if
+    end do
+    if (.not.found)then
+       write(*,*)
+       write(*,*) "************** NO MATCHING PARAMETERS **************"
+       write(*,*)
+    end if
+
+    return
+  end subroutine io_search
+    
+  subroutine io_list_params(print_flag)
+    implicit none
+    logical  :: print_flag
+
+    character(15) :: junk
+    integer       :: i ! loops 
+    ! Allocate all the arrays for the parameters
+    allocate(keys_array(1:max_keys))
+    allocate(keys_default(1:max_keys))
+    allocate(keys_description(1:max_keys))
+    allocate(keys_allowed(1:max_keys))
+
+
+
+    
+    ! assign the keys
+    keys_array(1)=trim(key_calc_len)
+    keys_array(2)=trim(key_init_pop)
+    keys_array(3)=trim(key_mean_child_age)
+    keys_array(4)=trim(key_child_sd)
+    keys_array(5)=trim(key_child_norm)
+    keys_array(6)=trim(key_write_pop)
+    keys_array(7)=trim(key_write_br)
+    keys_array(8)=trim(key_write_age)
+    keys_array(9)=trim(key_redistrib_freq)
+    keys_array(10)=trim(key_random_seed)
+    keys_array(11)=trim(key_debug)
+    keys_array(12)=trim(key_life_table_year)
+
+    
+    write(junk,*)current_params%calc_len 
+    keys_default(1)=trim(adjustl(junk))
+    write(junk,*)current_params%init_pop 
+    keys_default(2)=trim(adjustl(junk))
+    write(junk,*)current_params%child_age 
+    keys_default(3)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%child_sd  
+    keys_default(4)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%child_norm 
+    keys_default(5)=trim(adjustl(junk))
+    write(junk,*)current_params%write_population 
+    keys_default(6)=trim(adjustl(junk))
+    write(junk,*)current_params%write_birth_rate 
+    keys_default(7)=trim(adjustl(junk))
+    write(junk,*)current_params%write_ave_age 
+    keys_default(8)=trim(adjustl(junk))
+    junk="CALC_LEN/10" ! Speical case 
+    keys_default(9)=trim(adjustl(junk))
+    junk="RANDOMISED"  ! Special case
+    keys_default(10)=trim(adjustl(junk))
+    write(junk,*)current_params%debug 
+    keys_default(11)=trim(adjustl(junk))
+    write(junk,*)current_params%life_table_year
+    keys_default(12)=trim(adjustl(junk))
+
+
+    keys_description(1)="Length of the calculation in years"
+    keys_description(2)="Initial total population, combined men and women"
+    keys_description(3)="Mean age for a woman to have a child, modelled as a Gaussian"
+    keys_description(4)="Standard deviation for the birth probability"
+    keys_description(5)="Number of children a woman will have on average in her lifetime"
+    keys_description(6)="Write the population data to a file 'population.pop'"
+    keys_description(7)="Write the birth rate data to file"
+    keys_description(8)="Write the avergae age data to file"
+    keys_description(9)="Interval for parallel redistribution of population data and reporting, in years"
+    keys_description(10)="Provide a random seed for reproducability"
+    keys_description(11)="Toggle code profilling"
+    keys_description(12)="Select year for life US life table"
+
+
+
+    !do the allowed values now
+    keys_allowed(1)= "(any integer) > 0"
+    keys_allowed(2)= "(any integer) > 0"
+    keys_allowed(3)= "(any integer) > 0"
+    keys_allowed(4)= "(any integer) > 0"
+    keys_allowed(5)= "(any real) > 0"
+    keys_allowed(6)= "Boolean"
+    keys_allowed(7)= "Boolean"
+    keys_allowed(8)= "Boolean"
+    keys_allowed(9)= "(any integer) > 0"
+    keys_allowed(10)= "(any integer)"
+    keys_allowed(11)= "Boolean"
+    keys_allowed(12)= "2011 < (any integer) < 2018"
+    
+
+    ! do the loop for printing stuff
+
+    if (print_flag)then 
+100    format(1x,A,T35,A)
+       write(*,*)
+       do i=1,max_keys
+          write(*,100) io_case(trim(keys_array(i)),.true.),trim(keys_description(i))
+       end do
+    end if
+
+
     return
   end subroutine io_list_params
 
@@ -760,7 +935,7 @@ contains
     write(stdout,10) "Redistribition Frequency",current_params%redistrib_freq, "years"
     write(stdout,12) "Profilling",current_params%debug
     write(stdout,10) "Random Seed",current_params%random_seed(0)
-    
+
     sec_title="Parallelisation Parameters"
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
@@ -914,4 +1089,9 @@ contains
     !call trace_exit("io_flush")
     return 
   end subroutine io_flush
+
+
+
+
+
 end module io
