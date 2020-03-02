@@ -3,7 +3,7 @@
 module life
 
   use comms
-  use io,    only : current_params,stdout,dp,pi,current_lifetable,io_present
+  use io,    only : current_params,stdout,dp,pi,current_lifetable,io_present,io_errors
   use trace, only : trace_exit,trace_entry
   implicit none
 
@@ -74,7 +74,7 @@ contains
        if (age_group%no_people.lt.1)exit
 
 
-       call random_number(rand)
+       call life_random_number(rand)
 
 
        if (rand.lt.current_lifetable%life_data(age_group%age))then
@@ -86,7 +86,7 @@ contains
 
        ! Now lets check if they can have a baby
        if (age_group%is_female)then
-          call random_number(rand)
+          call life_random_number(rand)
 
           if (rand.lt.baby_prob(age_group%age)*life_modulate_prob(diff))then
              ! This person had a baby, Yay!!
@@ -159,7 +159,7 @@ contains
 
 
     do i=1,pop_buff
-       call random_number(rand)
+       call life_random_number(rand)
        index=int(0_dp*rand)
        species_array(index)%no_people =species_array(index)%no_people+1
     end do
@@ -212,7 +212,7 @@ contains
 
     do i=1,children
 
-       call random_number(rand)
+       call life_random_number(rand)
        if (rand.gt.prob)then
           !print*,"boy child"
           women(index)%no_people=women(index)%no_people+1
@@ -242,33 +242,47 @@ contains
     !==============================================================================!
     implicit none
     integer, allocatable :: seed(:)
-    integer ::  n, un, istat
+    integer ::  n, un, istat,the_seed
     call trace_entry("life_random")
-    allocate(seed(0:0))
+
 
     if (on_root_node)then 
        if (.not.io_present("random_seed"))then
           call random_seed(size = n)
+          allocate(seed(n))
           open(newunit=un, file="/dev/urandom", access="stream", &
                form="unformatted", action="read", status="old", iostat=istat)
           read(un) seed
           close(un)
-          n=abs(seed(0))
+          the_seed=abs(seed(1))
+          seed=the_seed
        else
-
-          n=current_params%random_seed(0)
-          !print*,n
+          call random_seed(size = n)
+          allocate(seed(n))
+          the_seed=current_params%random_seed
+          seed=the_seed
        end if
     end if
-    call comms_bcast(n,1)
-    seed(0)=n
-    current_params%random_seed=seed
+    call comms_bcast(the_seed,1)
+    seed=the_seed+37*rank
+    current_params%random_seed=seed(1)
 
-    call random_seed(put=current_params%random_seed+37*rank)
+    call random_seed(put=seed)
     call trace_exit("life_random")
     return
   end subroutine life_random
 
+  subroutine life_random_number(rand)
+    implicit none
+    real(dp),intent(inout)  ::rand 
+    !call trace_entry("life_random_number")
+    call random_number(rand)
+    
+    !call trace_exit("life_random_number")
+    return
+  end subroutine life_random_number
+
+  
   subroutine life_count_pop(men,women,men_count,women_count)
     !==============================================================================!
     !                         L I F E _ C O U N T _ P O P                          !

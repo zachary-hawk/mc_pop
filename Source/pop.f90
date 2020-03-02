@@ -61,7 +61,7 @@ program mc_pop
   ! Set up the random numbers, these should be on each process
 
   call life_random()
-  call random_seed(get=seed)
+  !call random_seed(get=seed)
 
 
   ! Here we write all the parameters to the main output file

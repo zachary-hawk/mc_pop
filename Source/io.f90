@@ -42,7 +42,7 @@ module io
      logical          :: debug             = .false.
      integer          :: redistrib_freq    = 10
 
-     integer,dimension(0:0)          :: random_seed
+     integer          :: random_seed
 
      !I/O parameters
      logical          :: write_population  = .true.
@@ -299,7 +299,7 @@ contains
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_random_seed)
-             read(param,*,iostat=stat) dummy_params%random_seed(0)
+             read(param,*,iostat=stat) dummy_params%random_seed
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_disease_spread)
@@ -1034,7 +1034,7 @@ contains
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
     write(stdout,10) "Redistribition Frequency",current_params%redistrib_freq, "years"
     write(stdout,12) "Profilling",current_params%debug
-    write(stdout,10) "Random Seed",current_params%random_seed(0)
+    write(stdout,10) "Random Seed",current_params%random_seed
     if(comms_arch.eq."MPI")then
        sec_title="Parallelisation Parameters"
        length=len(trim(sec_title))
