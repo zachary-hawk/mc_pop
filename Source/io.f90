@@ -1,5 +1,3 @@
-!---- File documented by Fortran Documenter, Z.Hawkhead
-!---- File documented by Fortran Documenter, Z.Hawkhead
 module io
 
   !Impose strong typing
@@ -19,13 +17,13 @@ module io
   integer,           private,parameter     :: life_file = 189
   logical,           public                :: file_exists
   character(100),dimension(:),allocatable  :: present_array
-  integer,parameter                        :: max_keys=12
+  integer,parameter                        :: max_keys=17
   character(100),dimension(:),allocatable  :: keys_array
   character(100),dimension(:),allocatable  :: keys_description
   character(100),dimension(:),allocatable  :: keys_default
   character(100),dimension(:),allocatable  :: keys_allowed
   character(100),dimension(:),allocatable  :: keys_type
-  
+
   integer                                  :: max_params=1
 
   type  parameters
@@ -51,6 +49,12 @@ module io
      logical          :: write_ave_age     = .false.
      logical          :: write_birth_rate  = .false.
 
+     ! Disease parameters
+     real(dp)         :: disease_spread    = 0.1
+     real(dp)         :: disease_mort      = 0.02
+     real(dp)         :: disease_init      = 0.01
+     real(dp)         :: disease_crit      = 0.5
+     logical          :: disease           = .false.
 
   end type parameters
 
@@ -70,7 +74,12 @@ module io
   character(len=30),parameter,public :: key_write_age        = "write_ave_age"
   character(len=30),parameter,public :: key_random_seed      = "random_seed"
 
-
+  character(len=30),parameter,public :: key_disease_spread   = "disease_spread"
+  character(len=30),parameter,public :: key_disease_mort     = "disease_mortality"
+  character(len=30),parameter,public :: key_disease_init     = "disease_init_pop"
+  character(len=30),parameter,public :: key_disease_crit     = "disease_critical_mass"
+  character(len=30),parameter,public :: key_disease          = "disease"
+  
   type life_table
      real(dp),dimension(0:100)  :: life_data
      integer                    :: year
@@ -161,7 +170,17 @@ contains
        current_params%redistrib_freq=current_params%calc_len/10
     end if
 
+    ! Set Disease
+    if (io_present(key_disease_init)&
+         & .or.io_present(key_disease_mort)&
+         & .or.io_present(key_disease_spread)&
+         & .or.io_present(key_disease_crit)) current_params%disease=.true.
 
+    ! Check for stupidity 
+    if (current_params%calc_len.lt.0) &
+         & call io_errors("Error in I/O: "//trim(key_calc_len)//" must be positive")
+    if (current_params%init_pop.lt.0) &
+         & call io_errors("Error in I/O: "//trim(key_init_pop)//" must be positive")
 
 
 
@@ -283,7 +302,26 @@ contains
              read(param,*,iostat=stat) dummy_params%random_seed(0)
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
-
+          case(key_disease_spread)
+             read(param,*,iostat=stat) dummy_params%disease_spread
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_disease_init)
+             read(param,*,iostat=stat) dummy_params%disease_init
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_disease_mort)
+             read(param,*,iostat=stat) dummy_params%disease_mort
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_disease_crit)
+             read(param,*,iostat=stat) dummy_params%disease_crit
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_disease)
+             read(param,*,iostat=stat) dummy_params%disease
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
 
           case default
              call io_errors("Error in I/O: Error parsing keyword: "//key)
@@ -531,6 +569,7 @@ contains
              read_params=.false.
              call io_list_params(.false.)
              help=.true.
+             if (arg_index.eq.nargs) call io_help
           case("-s","--search")
              write(*,*) trim(version)
              write(*,*) trim(info)
@@ -538,6 +577,7 @@ contains
              read_params=.false.
              call io_list_params(.false.)
              search=.true.
+             if (arg_index.eq.nargs) call io_help
 
           case("-v")
              write(*,*) trim(version)
@@ -622,6 +662,17 @@ contains
 
 
   subroutine io_search(string)
+    !==============================================================================!
+    !                              I O _ S E A R C H                               !
+    !==============================================================================!
+    ! Subroutine for using the command to search for availible variables that      !
+    ! the user can change in a calculation                                         !
+    !------------------------------------------------------------------------------!
+    ! Arguments:                                                                   !
+    !           string,            intent :: in                                    !
+    !------------------------------------------------------------------------------!
+    ! Author:   Z. Hawkhead  29/02/2020                                            !
+    !==============================================================================!
     implicit none
     character(*)     :: string
     logical          :: found
@@ -629,7 +680,7 @@ contains
 
     do i=1,max_keys
        scan_res=index(trim(keys_array(i)),trim(string))
-       
+
        if (scan_res.gt.0)then
           found=.true.
 100       format(1x,A,T35,A)
@@ -644,8 +695,19 @@ contains
 
     return
   end subroutine io_search
-    
+
   subroutine io_list_params(print_flag)
+    !==============================================================================!
+    !                         I O _ L I S T _ P A R A M S                          !
+    !==============================================================================!
+    ! Subroutine used to print the total list of variables to the terminal and     !
+    ! also to allocate all of the global arrays which contain the variable data.   !
+    !------------------------------------------------------------------------------!
+    ! Arguments:                                                                   !
+    !           print_flag,        intent :: in                                    !
+    !------------------------------------------------------------------------------!
+    ! Author:   Z. Hawkhead  29/02/2020                                            !
+    !==============================================================================!
     implicit none
     logical  :: print_flag
 
@@ -659,7 +721,7 @@ contains
 
 
 
-    
+
     ! assign the keys
     keys_array(1)=trim(key_calc_len)
     keys_array(2)=trim(key_init_pop)
@@ -673,6 +735,12 @@ contains
     keys_array(10)=trim(key_random_seed)
     keys_array(11)=trim(key_debug)
     keys_array(12)=trim(key_life_table_year)
+    keys_array(13)=trim(key_disease_spread)
+    keys_array(14)=trim(key_disease_init)
+    keys_array(15)=trim(key_disease_mort)
+    keys_array(16)=trim(key_disease_crit)
+    keys_array(17)=trim(key_disease)
+
 
     
     write(junk,*)current_params%calc_len 
@@ -699,6 +767,16 @@ contains
     keys_default(11)=trim(adjustl(junk))
     write(junk,*)current_params%life_table_year
     keys_default(12)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%disease_spread
+    keys_default(13)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%disease_init
+    keys_default(14)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%disease_mort
+    keys_default(15)=trim(adjustl(junk))
+    write(junk,'(f4.2)')current_params%disease_crit
+    keys_default(16)=trim(adjustl(junk))
+    write(junk,*)current_params%disease
+    keys_default(17)=trim(adjustl(junk))
 
 
     keys_description(1)="Length of the calculation in years"
@@ -713,8 +791,11 @@ contains
     keys_description(10)="Provide a random seed for reproducability"
     keys_description(11)="Toggle code profilling"
     keys_description(12)="Select year for life US life table"
-
-
+    keys_description(13)="Maximum probablility of the catching the disease, varies as a function of population"
+    keys_description(14)="Initial number of people with the disease"
+    keys_description(15)="Increase in mortality rate for a person with the disease"
+    keys_description(16)="Deseased population fraction when contagion is highest."
+    keys_description(17)="Toggle for running a calculation with disease"
 
     !do the allowed values now
     keys_allowed(1)= "(any integer) > 0"
@@ -729,8 +810,14 @@ contains
     keys_allowed(10)= "(any integer)"
     keys_allowed(11)= "Boolean"
     keys_allowed(12)= "2011 < (any integer) < 2018"
-    
+    keys_allowed(13)= "0.0 < (any real) < 1.0"
+    keys_allowed(14)= "0.0 < (any real) < 1.0"
+    keys_allowed(15)= "(any real) > 0.0"
+    keys_allowed(16)= "0.0 < (any real) < 1.0"
+    keys_allowed(17)= "Boolean"
 
+
+    
     ! do the loop for printing stuff
 
     if (print_flag)then 
@@ -810,7 +897,7 @@ contains
     write(stdout,*) "+==================================================================================+"
     write(stdout,*)
     write(stdout,*) "Compiled with ",compiler," ",Trim(compile_version), " on ", __DATE__, " at ",__TIME__
-    write(stdout,*) "Communications architechture: ",trim(comms_arch)
+    write(stdout,*) "Communications architechture: ",comms_arch
     if (comms_arch.eq."MPI")then
        write(stdout,*) "MPI Version: ",mpi_c_version(1:min_char+1)
     end if
@@ -921,6 +1008,19 @@ contains
     write(stdout,10)"Life Table year",current_params%life_table_year
 
 
+    sec_title="Disease Parameters"
+    length=len(trim(sec_title))
+    write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
+
+    write(stdout,12)"Disease Present",current_params%disease
+    if (current_params%disease)then
+       write(stdout,11)"Contagiousness",current_params%disease_spread*100_dp,"%"
+       write(stdout,11)"Initial Infected Population",current_params%disease_init*100_dp,"%"
+       write(stdout,11)"Disease Severity",current_params%disease_mort*100_dp,"%"
+       write(stdout,11)"Disease Critical Mass",current_params%Disease_crit*100_dp,"% population diseased"
+    end if
+
+
     sec_title="I/O Parameters"
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
@@ -935,12 +1035,12 @@ contains
     write(stdout,10) "Redistribition Frequency",current_params%redistrib_freq, "years"
     write(stdout,12) "Profilling",current_params%debug
     write(stdout,10) "Random Seed",current_params%random_seed(0)
-
-    sec_title="Parallelisation Parameters"
-    length=len(trim(sec_title))
-    write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
-    write(stdout,10)"Number of Cores",nprocs
-
+    if(comms_arch.eq."MPI")then
+       sec_title="Parallelisation Parameters"
+       length=len(trim(sec_title))
+       write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
+       write(stdout,10)"Number of Cores",nprocs
+    end if
 
 
     write(stdout,*) repeat("-",width-1)
@@ -953,6 +1053,18 @@ contains
 
 
   subroutine io_write_results(res,survived)
+    !==============================================================================!
+    !                       I O _ W R I T E _ R E S U L T S                        !
+    !==============================================================================!
+    ! Subroutine used to write out the results calculated in the calculation       !
+    ! which are stored in the derived data type 'results'.                         !
+    !------------------------------------------------------------------------------!
+    ! Arguments:                                                                   !
+    !           res,               intent :: in                                    !
+    !           survived,          intent :: in                                    !
+    !------------------------------------------------------------------------------!
+    ! Author:   Z. Hawkhead  29/02/2020                                            !
+    !==============================================================================!
 
     implicit none
     type(results)          :: res
@@ -1082,6 +1194,19 @@ contains
   end function io_present
 
   subroutine io_flush(unit)
+    !==============================================================================!
+    !                               I O _ F L U S H                                !
+    !==============================================================================!
+    ! Subroutine wrapper for the intrinsic function that forces the system to      !
+    ! clear the cache so that I/O can be written to file. Mainly used with the     !
+    ! GNU fortran compiler, programs compiled with that compiler tend to hold on   !
+    ! to the cache much longer.                                                    !
+    !------------------------------------------------------------------------------!
+    ! Arguments:                                                                   !
+    !           unit,              intent :: in                                    !
+    !------------------------------------------------------------------------------!
+    ! Author:   Z. Hawkhead  29/02/2020                                            !
+    !==============================================================================!
     implicit none
     integer  :: unit
     !call trace_entry("io_flush")
