@@ -64,7 +64,6 @@ program mc_pop
   call random_seed(get=seed)
 
 
-
   ! Here we write all the parameters to the main output file
   call io_write_params()
 
@@ -299,7 +298,7 @@ program mc_pop
         open(4,file="population.pop",status="unknown",form="unformatted")
         write(stdout,*)"Writing population data to 'population.pop'"
         write(4) total_buff
-        close(6)
+        close(4)
      end if
      if (current_params%write_ave_age ) then
         open(5,file="average_age.pop",status="unknown",form="unformatted")

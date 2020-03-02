@@ -227,7 +227,7 @@ contains
     integer,intent(inout) :: rank
     call trace_entry("COMMS_RANK")
     rank=0
-
+    call trace_exit("COMMS_RANK")
   end subroutine COMMS_RANK
 
   subroutine COMMS_SIZE(nprocs)
