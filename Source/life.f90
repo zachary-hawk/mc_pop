@@ -160,7 +160,7 @@ contains
 
     do i=1,pop_buff
        call life_random_number(rand)
-       index=int(0_dp*rand)
+       index=int(20_dp*rand)
        species_array(index)%no_people =species_array(index)%no_people+1
     end do
     call trace_exit("life_init_pop")
@@ -263,11 +263,16 @@ contains
           seed=the_seed
        end if
     end if
+
     call comms_bcast(the_seed,1)
+    call comms_bcast(n,1)
+    if (rank.gt.0) allocate(seed(n))
     seed=the_seed+37*rank
     current_params%random_seed=seed(1)
 
+
     call random_seed(put=seed)
+
     call trace_exit("life_random")
     return
   end subroutine life_random
@@ -411,6 +416,7 @@ contains
     integer,allocatable,dimension(:)        :: total_age_array, total_age_array_buff
 
     integer :: age
+
     call trace_entry("life_redistribute")
     allocate(total_age_array_buff(1:size(people_array)))
     allocate(total_age_array(1:size(people_array)))

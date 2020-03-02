@@ -221,9 +221,14 @@ program mc_pop
 
      ! now we redisbribute the data if required
 
+
+
+
      if (mod(year,current_params%redistrib_freq).eq.0 &
           & .or.year.eq.current_params%calc_len) then
+
         if (year.gt.0) then 
+
            call life_redistribute(population_men)
            call life_redistribute(population_women)
 
@@ -266,7 +271,7 @@ program mc_pop
 
   ! Do some comms to sum up the arrays
 
-  
+
   call comms_reduce(total_count,total_buff,size(total_count),"MPI_SUM")
   call comms_reduce(teen_preg_array,teen_buff,size(teen_preg_array),"MPI_SUM")
   call comms_reduce(birth_rate_array,br_buff,size(birth_rate_array),"MPI_SUM")
@@ -358,12 +363,13 @@ program mc_pop
 
 
   call trace_exit("mc_pop")
-  call trace_finalise(current_params%debug,rank)! last things last, take down the comms.
+
 
   current_time=comms_wtime()
+      call trace_finalise(current_params%debug,rank)
   call comms_reduce(global_time,time,1,"MPI_MAX")
 
-
+  print*,comms_time,time
   if (on_root_node)then
      !time=time-start_time
      efficiency=(1_dp-comms_time/time)*100_dp
@@ -371,7 +377,9 @@ program mc_pop
      if (nprocs.gt.1) write(stdout,'(1x,"|",5x,"Efficiency: ",f10.2,1x,"%",52x,"|")')Efficiency
      write(stdout,*)"+"//repeat("-",81)//"+"
   end if
-  call comms_finalise()
+  call comms_finalise() ! last things last, take down the comms.
+
+
   close(stdout)
 
 

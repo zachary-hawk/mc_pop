@@ -28,13 +28,13 @@ module io
 
   type  parameters
      !Calculation parameters
-     integer          :: init_pop          = 100
+     integer          :: init_pop          = 10000
      integer          :: child_age         = 23
      integer          :: calc_len          = 100
      integer          :: life_table_year   = 2017
      !Child prob params
      real(dp)         :: child_sd          = 5.0_dp
-     real(dp)         :: child_norm        = 2.8_dp!0.4_dp
+     real(dp)         :: child_norm        = 2.2_dp!0.4_dp
 
 
      !Some extra functionality
