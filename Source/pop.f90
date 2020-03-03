@@ -41,7 +41,7 @@ program mc_pop
   ! Generic things for auxilliary calculations
   real(dp)                               :: efficiency
   real(dp)                               :: start_time,end_time,current_time,time   ! Some timing stuff
-
+  real(dp)      :: random_test
 
   integer :: test_pop ! population counter for mpi buffers
 
@@ -61,7 +61,14 @@ program mc_pop
   ! Set up the random numbers, these should be on each process
 
   call life_random()
-  !call random_seed(get=seed)
+  ! Random number testing code
+  !open(newunit=year,form="FORMATTED",status="unknown",file="random.pop")
+  !do i=1,current_params%calc_len
+  !   call life_random_number(random_test)
+  !   write(year,*)random_test
+  !end do
+  
+  
 
 
   ! Here we write all the parameters to the main output file
