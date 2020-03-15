@@ -13,8 +13,8 @@ module io
   character(len=128),public                :: info     = "Parallel code for Monte Carlo Population simulation"
   integer,           public,parameter      :: stdout = 984 
   integer,           public,parameter      :: dp = real64
+  integer                                  :: demo_unit
   real,              public,parameter      :: pi=3.1415926535
-  integer,           private,parameter     :: life_file = 189
   logical,           public                :: file_exists
   character(100),dimension(:),allocatable  :: present_array
   integer,parameter                        :: max_keys=17
@@ -101,13 +101,16 @@ module io
      real(dp)  :: i65_plus
      real(dp)  :: i85_plus
      real(dp)  :: life_expectancy
+     real(dp)  :: men_pc
   end type results
 
 
   type(parameters),public,save             :: current_params
 
-  type(life_table),public,save             :: current_lifetable
-
+  type(life_table),public,save             :: current_lifetable_m
+  type(life_table),public,save             :: current_lifetable_f
+  
+  
 
 
   !-------------------------------------------------------!
@@ -162,8 +165,10 @@ contains
 
 
     ! This is where intialise life tables, there will be a datatype in this file
-    call io_read_life(current_lifetable)
-
+    call io_read_life(current_lifetable_m,.false.)
+    call io_read_life(current_lifetable_f,.true.)
+    
+    
 
     ! Make some sensible defaults
     if (.not.io_present(key_redistrib_freq))then
@@ -194,8 +199,11 @@ contains
 
     ! Open up the main file for the output
     open(stdout,file="out.pop",RECL=8192,form="FORMATTED",access="append")
-    !do some stuff about dry runs and commandline parsers here 
-
+    ! Open the check file
+    open(newunit=demo_unit,file="demographics.pop",form="UNFORMATTED",status="unknown")
+    ! write the number of years we've got
+    write(demo_unit) 1+current_params%calc_len/current_params%redistrib_freq
+    
     call trace_exit("io_initialise")
     return
   end subroutine io_initialise
@@ -352,7 +360,7 @@ contains
   end subroutine io_read_param
 
 
-  subroutine io_read_life(dummy_life)
+  subroutine io_read_life(dummy_life,female)
     !==============================================================================!
     !                           I O _ R E A D _ L I F E                            !
     !==============================================================================!
@@ -366,20 +374,27 @@ contains
     !==============================================================================!
     implicit none
     type(life_table), intent(inout) :: dummy_life
+    logical                         :: female
     integer                         :: wstat,stat,counter=0
-    character(20)                   :: name,first,second,life_str
+    character(30)                   :: name,first,second,life_str
     real(dp)                        :: prob
     logical                         :: file_exists
+    integer                         :: life_file
 
     call trace_entry("io_read_life")
 #ifdef life_dir
 #define life_str life_dir
 #endif 
+    if(female)then
 
-    write(name,'("life_table_",I0,".csv")',iostat=stat) current_params%life_table_year
-    if (stat.ne.0) call io_errors("Error in I/O: Internal variable write error")
-    name=trim(name)
-
+       write(name,'("f_life_table_",I0,".csv")',iostat=stat) current_params%life_table_year
+       if (stat.ne.0) call io_errors("Error in I/O: Internal variable write error")
+       name=trim(name)
+    else
+       write(name,'("m_life_table_",I0,".csv")',iostat=stat) current_params%life_table_year
+       if (stat.ne.0) call io_errors("Error in I/O: Internal variable write error")
+       name=trim(name)
+    end if
     !check if the User has used a correct file, if not, cause error
 
     inquire(file=trim(life_str)//"/life_tables/"//name,exist=file_exists)
@@ -389,14 +404,14 @@ contains
        call io_errors("Error in I/O: No life table found: "//name)
     end if
 
-    open(unit=life_file,file=trim(life_str)//"/life_tables/"//name)
+    open(newunit=life_file,file=trim(life_str)//"/life_tables/"//name,status='old')
 
     do while (trim(first) .ne. "0-1")
        read(life_file,*)first,second
     end do
-
+    counter=0
     do while (stat.eq.0)
-       read(second,'(f7.6)',iostat=wstat) prob
+       read(second,*,iostat=wstat) prob
 
        if (wstat.ne.0) call io_errors("Error in I/O: Internal variable write error")
        dummy_life%life_data(counter)=prob
@@ -406,9 +421,9 @@ contains
     end do
 
     dummy_life%year=current_params%life_table_year
-
+    close(life_file)
     call trace_exit("io_read_life")
-
+    return
   end subroutine io_read_life
 
 
@@ -1093,7 +1108,8 @@ contains
        write(stdout,11) "Average Teen Pregnacy Rate",res%teen_preg,"per 1000"
        write(stdout,11) "Average Infant Mortality Rate",res%infant_mort,"per 1000"
        write(stdout,11) "Average Birth Rate",res%birth_rate,"per 1000"
-
+       write(stdout,11) "Percentage Men",res%men_pc,"%"
+       write(stdout,11) "Percentage Women",100_dp-res%men_pc,"%"
        sec_title="Demographics"
        length=len(trim(sec_title))
        write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)

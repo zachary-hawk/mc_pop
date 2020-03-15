@@ -19,12 +19,14 @@ program mc_pop
   integer                                :: popcount_men=0
   integer                                :: popcount_women=0
   integer                                :: popcount_total=0
-  real(dp)                               :: pop_diff=0
+  real(dp)                               :: pop_diff=1_dp
   real(dp)                               :: average_age=0 
   integer                                :: teen_girls=0
   integer                                :: teen_babies=0
   integer                                :: infants=0
   integer                                :: infant_deaths
+  integer                                :: tot_deaths
+  integer                                :: tot_births
 
   ! Lets build some arrays that are going to store all the stuff i need
   integer,dimension(:),allocatable       :: total_count,       total_buff  ! Array with total population
@@ -54,6 +56,12 @@ program mc_pop
   if(on_root_node)start_time=comms_wtime()
   call comms_bcast(start_time,1) !Broadcast the start time to thats its universal
 
+!!$  open(2309,file="demographics.pop",form="UNFORMATTED")
+!!$  read(2309)i
+!!$  read(2309)i,j,k,warnings
+!!$  print*,i,j,k,warnings
+
+
   call io_initialise()
   call io_header()
 
@@ -67,8 +75,7 @@ program mc_pop
   !   call life_random_number(random_test)
   !   write(year,*)random_test
   !end do
-  
-  
+
 
 
   ! Here we write all the parameters to the main output file
@@ -99,11 +106,15 @@ program mc_pop
   if(on_root_node)   allocate(expect_buff(0:current_params%calc_len))
 
 
-  ! Here start initialising the population
-  allocate(population_men(0:size(current_lifetable%life_data)-1),stat=stat_pop)
+  ! Here start initialising the population!!
+  allocate(population_men(0:size(current_lifetable_m%life_data)-1),stat=stat_pop)
   if (stat_pop.ne.0) call io_errors("Error in allocate: Population allocate failed")
-  allocate(population_women(0:size(current_lifetable%life_data)-1),stat=stat_pop)
+  allocate(population_women(0:size(current_lifetable_m%life_data)-1),stat=stat_pop)
   if (stat_pop.ne.0) call io_errors("Error in allocate: Population allocate failed")
+
+
+
+
 
   do i=0,size(population_men)
      population_men(i)%is_female=.false.
@@ -149,6 +160,56 @@ program mc_pop
   do year=0,current_params%calc_len
 
 
+!!$     print*,sum(population_men%no_people+population_women%no_people),&
+!!$          -1*sum(population_men%no_dead+population_women%no_dead),&
+!!$          sum(population_women%no_born)
+!!$     if(year.eq.0)print*,population_women%no_people
+     ! zero the useful variables 
+     babies=0
+     teen_girls=0
+     teen_babies=0
+     infants=0
+     infant_deaths=0
+     tot_deaths=0
+     !print*,popcount_total,year
+     ! Loop for each age group
+     do i=0,100
+        call life_do_life(population_men(i),pop_diff)
+
+        ! Debugging totals
+        tot_deaths=tot_deaths+deaths
+
+        if (population_men(i)%age.lt.5) infant_deaths=infant_deaths+population_men(i)%no_dead
+        call life_do_life(population_women(i),pop_diff,teen_babies)
+
+        ! Debugging totals
+        !tot_deaths=tot_deaths+deaths
+
+
+        if (population_men(i)%age.lt.5)then
+           infant_deaths=infant_deaths+population_women(i)%no_dead
+        end if
+
+        call life_count_pop(population_men,population_women,popcount_men,popcount_women)
+
+        ! calculate the teenage pregnancy rate
+        if (population_women(i)%age.lt.18) then
+           teen_girls=teen_girls+population_women(i)%no_people
+        end if
+        ! calculate infant mortality rate
+        if(population_men(i)%age.lt.6) then           
+           infants=infants+population_men(i)%no_people+&
+                & population_women(i)%no_people
+        end if
+        !if(i.lt.10)        print*,population_women(i)%age,population_men(i)%no_people,population_men(i)%no_born,population_men(i)%no_dead
+     end do
+     babies=sum(population_women%no_born)
+
+     !print*,babies-tot_deaths,year
+
+     if (popcount_total.eq.0) warnings=.true.
+
+     !*********************************************************************************
      call life_average_age(population_men,population_women,average_age)
      call life_count_pop(population_men,population_women,popcount_men,popcount_women)
 
@@ -172,8 +233,6 @@ program mc_pop
 
 
 
-     ! allocate all of the babies to year 0 from the previous year
-     call life_allocate_babies(population_men,population_women,babies,year)
 
      ! Calculate the infant mortality rate that year
      if (infants.gt.0)then        
@@ -188,49 +247,36 @@ program mc_pop
         teen_preg_array(year)=0_dp
      end if
 
+!!$     population_men%no_people=population_men%no_people*nprocs
+!!$     population_women%no_people=population_women%no_people*nprocs
+!!$     do k=0,100
+!!$        write(demo_unit) 0,population_men(k)%age,population_men(k)%no_people,population_men(k)%is_female
+!!$        write(demo_unit) 0,population_women(k)%age,population_women(k)%no_people,population_women(k)%is_female
+!!$     end do
+!!$     population_men%no_people=population_men%no_people/nprocs
+!!$     population_women%no_people=population_women%no_people/nprocs
+
+     !**************************************************************************************
 
 
-     ! zero the useful variables 
-     babies=0
-     teen_girls=0
-     teen_babies=0
-     infants=0
-     infant_deaths=0
-
-
-     ! Loop for each age group
-     do i=0,100
-        deaths=0
-        call life_do_life(population_men(i),babies,deaths,pop_diff)
-        if (population_men(i)%age.lt.5) infant_deaths=infant_deaths+deaths
-        deaths=0
-        call life_do_life(population_women(i),babies,deaths,pop_diff,teen_babies)
-        if (population_men(i)%age.lt.5)then
-           infant_deaths=infant_deaths+deaths
-        end if
-
-        call life_count_pop(population_men,population_women,popcount_men,popcount_women)
-
-        ! calculate the teenage pregnancy rate
-        if (population_women(i)%age.lt.18) then
-           teen_girls=teen_girls+population_women(i)%no_people
-        end if
-        ! calculate infant mortality rate
-        if(population_men(i)%age.lt.6) then           
-           infants=infants+population_men(i)%no_people+&
-                & population_women(i)%no_people
+     !Now that we have calculated all of the properties of the people, we need to age them
+     do k=0,100
+        if (population_men(k)%age.lt.size(current_lifetable_m%life_data)-1)then
+           population_men(k)%age=population_men(k)%age+1
+           population_women(k)%age=population_women(k)%age+1
+        else
+           population_men(k)%age=0
+           population_women(k)%age=0
         end if
      end do
 
+     ! allocate all of the babies to year 0 from the previous year
+
+     call life_allocate_babies(population_men,population_women,babies,year)
 
 
-     if (popcount_total.eq.0) warnings=.true.
 
      ! now we redisbribute the data if required
-
-
-
-
      if (mod(year,current_params%redistrib_freq).eq.0 &
           & .or.year.eq.current_params%calc_len) then
 
@@ -264,6 +310,17 @@ program mc_pop
 
            ! Now we write...
            write(stdout,16) year,test_pop,time
+
+           ! The demographics file
+
+           population_men%no_people=population_men%no_people*nprocs
+           population_women%no_people=population_women%no_people*nprocs
+           do k=0,100
+              write(demo_unit) year,population_men(k)%age,population_men(k)%no_people,population_men(k)%is_female
+              write(demo_unit) year,population_women(k)%age,population_women(k)%no_people,population_women(k)%is_female
+           end do
+           population_men%no_people=population_men%no_people/nprocs
+           population_women%no_people=population_women%no_people/nprocs
         end if
 
      end if
@@ -344,7 +401,7 @@ program mc_pop
      current_results%i65_plus        =life_demographics(population_men,population_women,65,100)
      current_results%i85_plus        =life_demographics(population_men,population_women,85,100)
      current_results%life_expectancy =real(sum(expect_buff)/size(expect_buff),dp)
-
+     current_results%men_pc          =100_dp*(real(popcount_men,dp)/real(popcount_total,dp))
 
 
      ! calculate the demographics 
@@ -373,10 +430,10 @@ program mc_pop
 
 
   current_time=comms_wtime()
-      call trace_finalise(current_params%debug,rank)
+  call trace_finalise(current_params%debug,rank)
   call comms_reduce(global_time,time,1,"MPI_MAX")
 
-  print*,comms_time,time
+
   if (on_root_node)then
      !time=time-start_time
      efficiency=(1_dp-comms_time/time)*100_dp

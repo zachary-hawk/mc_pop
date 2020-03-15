@@ -3,7 +3,8 @@
 module life
 
   use comms
-  use io,    only : current_params,stdout,dp,pi,current_lifetable,io_present,io_errors
+  use io,    only : current_params,stdout,dp,pi,current_lifetable_m,current_lifetable_f&
+       &,io_present,io_errors
   use trace, only : trace_exit,trace_entry
   implicit none
 
@@ -15,6 +16,7 @@ module life
      integer        :: age        !defines human age
      integer        :: no_people=0   !Number of people
      integer        :: no_dead
+     integer        :: no_born
   end type human
 
   !public :: life_do_life
@@ -23,7 +25,7 @@ module life
 
 contains
 
-  subroutine life_do_life(age_group,num_born,num_die,diff,teen_babies)
+  subroutine life_do_life(age_group,diff,teen_babies)
     !==============================================================================!
     !                           L I F E _ D O _ L I F E                            !
     !==============================================================================!
@@ -33,29 +35,27 @@ contains
     !------------------------------------------------------------------------------!
     ! Arguments:                                                                   !
     !           age_group,         intent :: inout                                 !
-    !           num_born,          intent :: inout                                 !
-    !           num_die,           intent :: inout                                 !
     !------------------------------------------------------------------------------!
     ! Author:   Z. Hawkhead  03/02/2020                                            !
     !==============================================================================!
     implicit none
     !Input age group, not an array!
     type(human), intent(inout)   :: age_group
-    integer,     intent(inout)   :: num_born
+
     integer,     intent(inout),optional :: teen_babies
     real(dp),    intent(in)      :: diff
     !Some internal variables
     integer                      :: person !The loop variable for the people
     real(dp)                     :: rand
-    integer,     intent(inout)   :: num_die !This can remain in the subroutine
-
+    real(dp)                     :: death_prob
     integer                      :: age_counter
     real(dp),allocatable         :: age_range(:)
     integer                      :: group_babies
 
     ! set group babies to 0
     group_babies=0
-
+    age_group%no_dead=0
+    age_group%no_born=0
 
     ! Allocate the baby prob arrays 
 
@@ -67,7 +67,7 @@ contains
             & current_params%child_sd,current_params%child_norm,baby_prob)
     end if
 
-    !print*,baby_prob(age_group%age)
+    !print*,current_lifetable_f%life_data(age_group%age),current_lifetable_m%life_data(age_group%age)
     do person=0,age_group%no_people-1
        !Check to see if this person dies, need life table
        ! first thing, if no people, cycle
@@ -76,10 +76,15 @@ contains
 
        call life_random_number(rand)
 
+       if(age_group%is_female)then
+          death_prob=current_lifetable_f%life_data(age_group%age)
+       else
+          death_prob=current_lifetable_m%life_data(age_group%age)
+       end if
 
-       if (rand.lt.current_lifetable%life_data(age_group%age))then
+       if (rand.lt.death_prob)then 
           !This person is dead
-          num_die=num_die+1
+          age_group%no_dead=age_group%no_dead+1
 
           cycle ! This person cant have a baby.. sucks
        end if
@@ -104,24 +109,25 @@ contains
        end if
     end if
     ! Now I've checked the number of born and died, change this age groups num
-    if (num_die.lt.age_group%no_people)then
-       age_group%no_people=age_group%no_people-num_die
+    if (age_group%no_dead.lt.age_group%no_people)then
+       age_group%no_people=age_group%no_people-age_group%no_dead
        !else
        !age_group%no_people=0
     end if
     !num_die=0
-    num_born=num_born+group_babies
-
+    !num_born=num_born+group_babies
+    age_group%no_born=group_babies
+!!$
     ! Now we want to increment the age of the group
-
-    if (age_group%age.lt.size(current_lifetable%life_data)-1)then
-       age_group%age=age_group%age+1
-    else
-       age_group%age=0
-    end if
+ 
+!!$    if (age_group%age.lt.size(current_lifetable%life_data)-1)then
+!!$       age_group%age=age_group%age+1
+!!$    else
+!!$       age_group%age=0
+!!$    end if
 
     ! Set the number of dead people for this age group
-    age_group%no_dead=num_die
+    !age_group%no_dead=num_die
 
     return
   end subroutine life_do_life
@@ -143,10 +149,10 @@ contains
 
     ! Now for some internal variables
     real(dp)              :: rand
-    integer               :: i,index
+    integer               :: i,index=0
     integer               :: pop_buff
     integer               :: total=0
-
+    real(dp)              :: age_prob
     call trace_entry("life_init_pop")
 
     total=current_params%init_pop /2
@@ -158,11 +164,11 @@ contains
 
 
 
-    do i=1,pop_buff
-       call life_random_number(rand)
-       index=int(20_dp*rand)
-       species_array(index)%no_people =species_array(index)%no_people+1
+    do i=0,100
+       age_prob=pop_buff*life_init_demo(species_array(i)%age)
+       species_array(i)%no_people=nint(age_prob)
     end do
+
     call trace_exit("life_init_pop")
     return
   end subroutine life_init_pop
@@ -505,6 +511,21 @@ contains
   end function  life_demographics
 
 
+  function life_init_demo(age) result (prob)
+    implicit none
+    integer   :: age
+    real(dp)  :: prob
 
+    prob=integrand(real(age+1,dp))-integrand(real(age,dp))
+    
+  contains
+    function integrand(limit) result(lim_val)
+      implicit none
+      real(dp)   :: limit
+      real(dp)   :: lim_val
+      lim_val=(-1.5_dp*1_dp/1000_dp)*(100-limit)**1.5
+      ! lim_val=0.02_dp*limit-0.00009901_dp*limit**2
+    end  function integrand
+  end function life_init_demo
 
 end module life
