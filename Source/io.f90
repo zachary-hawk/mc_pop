@@ -569,8 +569,8 @@ contains
     integer          ::   arg_index !The index
     character(50)    ::   name      !The name of the argument
 
-    logical          ::   search
-    logical          ::   help
+    logical          ::   search = .false.
+    logical          ::   help   = .false.
     nargs=command_argument_count()
 
     if (nargs.gt.0)then
@@ -586,6 +586,7 @@ contains
              help=.true.
              if (arg_index.eq.nargs) call io_help
           case("-s","--search")
+             print*,"In seach cl parser" 
              write(*,*) trim(version)
              write(*,*) trim(info)
              write(*,*)
@@ -611,7 +612,7 @@ contains
                 call io_help(name)
                 help=.false.
              elseif(search)then 
-                call io_search(name)
+                call io_search(io_case(name))
                 search=.false.
                 stop
              else
@@ -692,7 +693,7 @@ contains
     character(*)     :: string
     logical          :: found
     integer          :: i,scan_res
-
+    print*,"In search"
     do i=1,max_keys
        scan_res=index(trim(keys_array(i)),trim(string))
 
