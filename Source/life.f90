@@ -162,11 +162,9 @@ contains
     pop_buff=total/nprocs
     if (on_root_node) pop_buff=pop_buff+mod(total,nprocs)
 
-
-
     do i=0,100
        age_prob=pop_buff*life_init_demo(species_array(i)%age)
-       species_array(i)%no_people=nint(age_prob)
+       species_array(i)%no_people=int(age_prob)
     end do
 
     call trace_exit("life_init_pop")
@@ -517,14 +515,14 @@ contains
     real(dp)  :: prob
 
     prob=integrand(real(age+1,dp))-integrand(real(age,dp))
-    
+    !print*,integrand(100._dp)-integrand(0._dp)
   contains
     function integrand(limit) result(lim_val)
       implicit none
       real(dp)   :: limit
       real(dp)   :: lim_val
-      lim_val=(-1.5_dp*1_dp/1000_dp)*(100-limit)**1.5
-      ! lim_val=0.02_dp*limit-0.00009901_dp*limit**2
+      lim_val=(-1.5_dp*1_dp/1000_dp)*(100-limit)**1.5/1.5_dp!*1.0099_dp
+      !lim_val=0.02_dp*limit-0.00009901_dp*limit**2
     end  function integrand
   end function life_init_demo
 

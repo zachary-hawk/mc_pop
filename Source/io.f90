@@ -24,6 +24,9 @@ module io
   character(100),dimension(:),allocatable  :: keys_allowed
   character(100),dimension(:),allocatable  :: keys_type
 
+  real(dp),    dimension(0:100),public      :: demo_init_men
+  real(dp),    dimension(0:100),public      :: demo_init_women
+
   integer                                  :: max_params=1
 
   type  parameters
@@ -141,6 +144,12 @@ contains
     character(10) :: line
     integer :: stat
 
+    logical :: demo_file
+
+
+    ! Some junk variables
+    
+    
     call trace_entry("io_initialise")
     call io_cl_parser() ! Read the commandline arguments
 
@@ -203,6 +212,20 @@ contains
     open(newunit=demo_unit,file="demographics.pop",form="UNFORMATTED",status="unknown")
     ! write the number of years we've got
     write(demo_unit) 1+current_params%calc_len/current_params%redistrib_freq
+
+    inquire("demographics.pop",exist=demo_file)
+    if (demo_file)then
+       open(100,"demographics.pop",status='old',form="UNFORMATTED")
+       read(100,iostat=stat)
+       if(stat.ne.0) call io_errors("I/O Error: read error in demographics.pop")
+       do i=0,100
+          read(100)
+          read(100)
+       end do
+    else
+       call io_errors("I/O Error: No file 'demographics.pop'")
+    end if
+
     
     call trace_exit("io_initialise")
     return

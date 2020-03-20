@@ -35,7 +35,7 @@ program mc_pop
   real(dp),   dimension(:),allocatable   :: birth_rate_array,  br_buff
   real(dp),   dimension(:),allocatable   :: infant_mortality,  infant_buff
   real(dp),   dimension(:),allocatable   :: life_expect,       expect_buff
-
+  
   integer ::seed(0:0)
   ! The variable declaration for the results
   type(results)                          :: current_results
@@ -137,7 +137,6 @@ program mc_pop
 
 
 
-
   call trace_entry("pop_main")
   ! Write the start of the table that tracks the calculations
 13 format("|",26x,"Starting Calculation...",26x,"|",1x,"<--YEAR")! Start format 
@@ -207,16 +206,22 @@ program mc_pop
 
      !print*,babies-tot_deaths,year
 
-     if (popcount_total.eq.0) warnings=.true.
+
 
      !*********************************************************************************
      call life_average_age(population_men,population_women,average_age)
      call life_count_pop(population_men,population_women,popcount_men,popcount_women)
-
      popcount_total=0
      popcount_total=popcount_men+popcount_women
      pop_diff=1_dp-(abs(popcount_men-popcount_women)/real(popcount_total,dp))
 
+
+     print*,popcount_total
+     if (popcount_total.eq.0) then
+        print*, "warning"
+        warnings=.true.
+     end if
+     
      !write total poulation to the array
      total_count(year)=popcount_total
      average_age_array(year)=average_age
