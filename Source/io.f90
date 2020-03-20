@@ -213,9 +213,9 @@ contains
     ! write the number of years we've got
     write(demo_unit) 1+current_params%calc_len/current_params%redistrib_freq
 
-    inquire("demographics.pop",exist=demo_file)
+    inquire(file="demographics.pop",exist=demo_file)
     if (demo_file)then
-       open(100,"demographics.pop",status='old',form="UNFORMATTED")
+       open(100,file="demographics.pop",status='old',form="UNFORMATTED")
        read(100,iostat=stat)
        if(stat.ne.0) call io_errors("I/O Error: read error in demographics.pop")
        do i=0,100
