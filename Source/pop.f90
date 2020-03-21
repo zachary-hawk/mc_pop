@@ -35,7 +35,7 @@ program mc_pop
   real(dp),   dimension(:),allocatable   :: birth_rate_array,  br_buff
   real(dp),   dimension(:),allocatable   :: infant_mortality,  infant_buff
   real(dp),   dimension(:),allocatable   :: life_expect,       expect_buff
-  
+
   integer ::seed(0:0)
   ! The variable declaration for the results
   type(results)                          :: current_results
@@ -63,7 +63,7 @@ program mc_pop
 
 
   call io_initialise()
-  call io_header()
+
 
 
   ! Set up the random numbers, these should be on each process
@@ -216,12 +216,11 @@ program mc_pop
      pop_diff=1_dp-(abs(popcount_men-popcount_women)/real(popcount_total,dp))
 
 
-     print*,popcount_total
+
      if (popcount_total.eq.0) then
-        print*, "warning"
         warnings=.true.
      end if
-     
+
      !write total poulation to the array
      total_count(year)=popcount_total
      average_age_array(year)=average_age
@@ -317,15 +316,16 @@ program mc_pop
            write(stdout,16) year,test_pop,time
 
            ! The demographics file
-
-           population_men%no_people=population_men%no_people*nprocs
-           population_women%no_people=population_women%no_people*nprocs
-           do k=0,100
-              write(demo_unit) year,population_men(k)%age,population_men(k)%no_people,population_men(k)%is_female
-              write(demo_unit) year,population_women(k)%age,population_women(k)%no_people,population_women(k)%is_female
-           end do
-           population_men%no_people=population_men%no_people/nprocs
-           population_women%no_people=population_women%no_people/nprocs
+           if (current_params%write_demo)then 
+              population_men%no_people=population_men%no_people*nprocs
+              population_women%no_people=population_women%no_people*nprocs
+              do k=0,100
+                 write(demo_unit) year,population_men(k)%age,population_men(k)%no_people,population_men(k)%is_female
+                 write(demo_unit) year,population_women(k)%age,population_women(k)%no_people,population_women(k)%is_female
+              end do
+              population_men%no_people=population_men%no_people/nprocs
+              population_women%no_people=population_women%no_people/nprocs
+           end if
         end if
 
      end if

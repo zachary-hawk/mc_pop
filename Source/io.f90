@@ -17,7 +17,7 @@ module io
   real,              public,parameter      :: pi=3.1415926535
   logical,           public                :: file_exists
   character(100),dimension(:),allocatable  :: present_array
-  integer,parameter                        :: max_keys=17
+
   character(100),dimension(:),allocatable  :: keys_array
   character(100),dimension(:),allocatable  :: keys_description
   character(100),dimension(:),allocatable  :: keys_default
@@ -32,7 +32,7 @@ module io
   type  parameters
      !Calculation parameters
      integer          :: init_pop          = 10000
-     integer          :: child_age         = 23
+     real(dp)         :: child_age         = 23.0
      integer          :: calc_len          = 100
      integer          :: life_table_year   = 2017
      !Child prob params
@@ -45,13 +45,14 @@ module io
      logical          :: debug             = .false.
      integer          :: redistrib_freq    = 10
 
+     logical          :: init_demo         = .false.
      integer          :: random_seed
 
      !I/O parameters
      logical          :: write_population  = .true.
      logical          :: write_ave_age     = .false.
      logical          :: write_birth_rate  = .false.
-
+     logical          :: write_demo        = .false.
      ! Disease parameters
      real(dp)         :: disease_spread    = 0.1
      real(dp)         :: disease_mort      = 0.02
@@ -75,6 +76,9 @@ module io
   character(len=30),parameter,public :: key_write_pop        = "write_pop"
   character(len=30),parameter,public :: key_write_br         = "write_birth_rate"
   character(len=30),parameter,public :: key_write_age        = "write_ave_age"
+  character(len=30),parameter,public :: key_write_demo       = "write_demographics"
+  character(len=30),parameter,public :: key_init_demo        = "init_demographics"
+  
   character(len=30),parameter,public :: key_random_seed      = "random_seed"
 
   character(len=30),parameter,public :: key_disease_spread   = "disease_spread"
@@ -113,7 +117,10 @@ module io
   type(life_table),public,save             :: current_lifetable_m
   type(life_table),public,save             :: current_lifetable_f
   
-  
+
+
+
+  integer,parameter                        :: max_keys=19
 
 
   !-------------------------------------------------------!
@@ -143,13 +150,13 @@ contains
     integer :: i ! counters
     character(10) :: line
     integer :: stat
-
+    integer :: demo_length ,year, age, age_pop
     logical :: demo_file
 
 
     ! Some junk variables
-    
-    
+
+
     call trace_entry("io_initialise")
     call io_cl_parser() ! Read the commandline arguments
 
@@ -176,12 +183,16 @@ contains
     ! This is where intialise life tables, there will be a datatype in this file
     call io_read_life(current_lifetable_m,.false.)
     call io_read_life(current_lifetable_f,.true.)
-    
-    
+
+
 
     ! Make some sensible defaults
     if (.not.io_present(key_redistrib_freq))then
-       current_params%redistrib_freq=current_params%calc_len/10
+       if (current_params%calc_len.gt.10) then 
+          current_params%redistrib_freq=current_params%calc_len/10
+       else
+          current_params%redistrib_freq=1
+       end if
     end if
 
     ! Set Disease
@@ -195,7 +206,8 @@ contains
          & call io_errors("Error in I/O: "//trim(key_calc_len)//" must be positive")
     if (current_params%init_pop.lt.0) &
          & call io_errors("Error in I/O: "//trim(key_init_pop)//" must be positive")
-
+!!$    if (current_params%calc_len.lt.current_params%redistrib_freq)&
+!!$         & call io_errors("Error in I/O: "//trim(key_redistrib_freq)//" must be less than or equal to "//trim(key_calc_len)) 
 
 
     ! Check there are enough people for the number of cores
@@ -208,26 +220,48 @@ contains
 
     ! Open up the main file for the output
     open(stdout,file="out.pop",RECL=8192,form="FORMATTED",access="append")
-    ! Open the check file
-    open(newunit=demo_unit,file="demographics.pop",form="UNFORMATTED",status="unknown")
-    ! write the number of years we've got
-    write(demo_unit) 1+current_params%calc_len/current_params%redistrib_freq
 
-    inquire(file="demographics.pop",exist=demo_file)
-    if (demo_file)then
-       open(100,file="demographics.pop",status='old',form="UNFORMATTED")
-       read(100,iostat=stat)
-       if(stat.ne.0) call io_errors("I/O Error: read error in demographics.pop")
-       do i=0,100
-          read(100)
-          read(100)
-       end do
-    else
-       call io_errors("I/O Error: No file 'demographics.pop'")
+
+
+    if (current_params%init_demo)then
+       inquire(file="demographics.pop",exist=demo_file)
+
+       if (demo_file)then
+          open(100,file="demographics.pop",status='old',form="UNFORMATTED")
+
+
+          read(100,iostat=stat) demo_length
+
+
+
+          if(stat.ne.0) call io_errors("I/O Error: read error in demographics.pop")
+          do while(stat.eq.0)
+             read(100,iostat=stat) year, age,age_pop
+             if(stat.ne.0)exit
+             demo_init_men(age)=real(age_pop,dp)
+             read(100,iostat=stat)year,age,age_pop
+             demo_init_women(age)=real(age_pop,dp)
+          end do
+          demo_init_men=demo_init_men/sum(demo_init_men)
+          demo_init_women=demo_init_women/sum(demo_init_women)
+          close(100)
+       else
+          call io_errors("I/O Error: No file 'demographics.pop'")
+       end if
+       
     end if
-
-    
+    if (current_params%write_demo)then 
+       if (.not.current_params%dry_run)then 
+          ! Open the check file
+          open(newunit=demo_unit,file="demographics.pop",form="UNFORMATTED",status="unknown")
+          ! write the number of years we've got
+          write(demo_unit) 1+current_params%calc_len/current_params%redistrib_freq
+       end if
+    end if
+    call io_header()
     call trace_exit("io_initialise")
+
+
     return
   end subroutine io_initialise
 
@@ -353,7 +387,19 @@ contains
              read(param,*,iostat=stat) dummy_params%disease
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
-
+          case(key_write_demo)
+             read(param,*,iostat=stat) dummy_params%write_demo
+             if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
+             present_array(i)=key
+          case(key_init_demo)
+             if (trim(param).eq."default")then
+                dummy_params%init_demo = .false.
+             else if(trim(param).eq."continuation")then
+                dummy_params%init_demo = .true.
+             else
+                call io_errors("Error in I/O: Error parsing value: "//param)
+             end if
+             present_array(i)=key
           case default
              call io_errors("Error in I/O: Error parsing keyword: "//key)
           end select
@@ -630,6 +676,7 @@ contains
              write(*,*) trim(info)
              read_params=.false.
              call io_list_params(.true.)
+             stop
           case default
              if (help)then
                 call io_help(name)
@@ -716,7 +763,7 @@ contains
     character(*)     :: string
     logical          :: found
     integer          :: i,scan_res
-    print*,"In search"
+
     do i=1,max_keys
        scan_res=index(trim(keys_array(i)),trim(string))
 
@@ -779,14 +826,15 @@ contains
     keys_array(15)=trim(key_disease_mort)
     keys_array(16)=trim(key_disease_crit)
     keys_array(17)=trim(key_disease)
+    keys_array(18)=trim(key_init_demo)
+    keys_array(19)=trim(key_write_demo)
 
 
-    
     write(junk,*)current_params%calc_len 
     keys_default(1)=trim(adjustl(junk))
     write(junk,*)current_params%init_pop 
     keys_default(2)=trim(adjustl(junk))
-    write(junk,*)current_params%child_age 
+    write(junk,'(f5.2)')current_params%child_age 
     keys_default(3)=trim(adjustl(junk))
     write(junk,'(f4.2)')current_params%child_sd  
     keys_default(4)=trim(adjustl(junk))
@@ -816,7 +864,10 @@ contains
     keys_default(16)=trim(adjustl(junk))
     write(junk,*)current_params%disease
     keys_default(17)=trim(adjustl(junk))
-
+    write(junk,*)current_params%init_demo
+    keys_default(18)=trim(adjustl(junk))
+    write(junk,*)current_params%write_demo
+    keys_default(19)=trim(adjustl(junk))
 
     keys_description(1)="Length of the calculation in years"
     keys_description(2)="Initial total population, combined men and women"
@@ -824,8 +875,8 @@ contains
     keys_description(4)="Standard deviation for the birth probability"
     keys_description(5)="Number of children a woman will have on average in her lifetime"
     keys_description(6)="Write the population data to a file 'population.pop'"
-    keys_description(7)="Write the birth rate data to file"
-    keys_description(8)="Write the avergae age data to file"
+    keys_description(7)="Write the birth rate data to file 'birth_rate.pop'"
+    keys_description(8)="Write the avergae age data to file 'ave_age.pop'"
     keys_description(9)="Interval for parallel redistribution of population data and reporting, in years"
     keys_description(10)="Provide a random seed for reproducability"
     keys_description(11)="Toggle code profilling"
@@ -833,9 +884,11 @@ contains
     keys_description(13)="Maximum probablility of the catching the disease, varies as a function of population"
     keys_description(14)="Initial number of people with the disease"
     keys_description(15)="Increase in mortality rate for a person with the disease"
-    keys_description(16)="Deseased population fraction when contagion is highest."
+    keys_description(16)="Deseased population fraction when contagion is highest"
     keys_description(17)="Toggle for running a calculation with disease"
-
+    keys_description(18)="Initialise the population from the final demographics of a previous calculation"
+    keys_description(19)="Write demographic data to file 'demographics.pop'"
+    
     !do the allowed values now
     keys_allowed(1)= "(any integer) > 0"
     keys_allowed(2)= "(any integer) > 0"
@@ -854,7 +907,8 @@ contains
     keys_allowed(15)= "(any real) > 0.0"
     keys_allowed(16)= "0.0 < (any real) < 1.0"
     keys_allowed(17)= "Boolean"
-
+    keys_allowed(18)= "DEFAULT,CONTINUATION"
+    keys_allowed(19)= "Boolean"
 
     
     ! do the loop for printing stuff
@@ -864,6 +918,7 @@ contains
        write(*,*)
        do i=1,max_keys
           write(*,100) io_case(trim(keys_array(i)),.true.),trim(keys_description(i))
+
        end do
     end if
 
@@ -1012,7 +1067,7 @@ contains
 10  format(1x,A,T44,':',5x,I12,1x,A)    !integer
 11  format(1x,A,T44,":",5x,f12.2,1x,A)  !real
 12  format(1x,A,T44,":",5x,L12,1x,A)    !logical
-
+13  format(1x,A,T44,":",5x,A12,1x,A)    !character
 
 
 
@@ -1031,12 +1086,17 @@ contains
 
     write(stdout,10) "Initial Population", current_params%init_pop
     write(stdout,10)"Calculation Length",current_params%calc_len,"years"
+    if (current_params%init_demo)then
 
+       write(stdout,13)"Demographics Initialisation","Previous Run"
+    else
+       write(stdout,13)"Demographics Initialisation","Default"
+    end if
     sec_title="Birth Parameters"
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
 
-    write(stdout,10)"Average Age",current_params%child_age
+    write(stdout,11)"Average Age",current_params%child_age
     write(stdout,11)"Standard Deviation",current_params%child_sd,"years"
     write(stdout,11)"Children per Woman",current_params%child_norm 
 
@@ -1067,6 +1127,7 @@ contains
     write(stdout,12)"Write Population Data",current_params%write_population
     write(stdout,12)"Write Age Data" ,current_params%write_ave_age
     write(stdout,12)"Write Birth Rate Data",current_params%write_birth_rate
+    write(stdout,12)"Write Demographics Data",current_params%write_demo
 
     sec_title="General Parameters"
     length=len(trim(sec_title))

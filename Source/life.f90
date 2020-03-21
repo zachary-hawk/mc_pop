@@ -4,7 +4,7 @@ module life
 
   use comms
   use io,    only : current_params,stdout,dp,pi,current_lifetable_m,current_lifetable_f&
-       &,io_present,io_errors
+       &,io_present,io_errors,demo_init_men,demo_init_women
   use trace, only : trace_exit,trace_entry
   implicit none
 
@@ -163,10 +163,19 @@ contains
     if (on_root_node) pop_buff=pop_buff+mod(total,nprocs)
 
     do i=0,100
-       age_prob=pop_buff*life_init_demo(species_array(i)%age)
-       species_array(i)%no_people=int(age_prob)
-    end do
+       if (current_params%init_demo)then 
+          if (.not.species_array(i)%is_female)then
+             age_prob=pop_buff*demo_init_men(species_array(i)%age)
+          else
+             age_prob=pop_buff*demo_init_women(species_array(i)%age)
+          end if
+          species_array(i)%no_people=int(age_prob)
+       else
+          age_prob=pop_buff*life_init_demo(species_array(i)%age)
+          species_array(i)%no_people=int(age_prob)
 
+       end if
+    end do
     call trace_exit("life_init_pop")
     return
   end subroutine life_init_pop

@@ -1,4 +1,4 @@
-FCFLAGS= -O3  -funroll-loops -p -g 
+FCFLAGS= -O1  -funroll-loops -p -g 
 BUILD_DIR ?= ./../build
 current_dir = '"'$(shell pwd)'"'
 
