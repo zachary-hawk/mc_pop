@@ -30,6 +30,8 @@ module io
   integer                                  :: max_params=1
 
   type  parameters
+     ! Begin: parameters
+     
      !Calculation parameters
      integer          :: init_pop          = 10000
      real(dp)         :: child_age         = 23.0
@@ -59,10 +61,10 @@ module io
      real(dp)         :: disease_init      = 0.01
      real(dp)         :: disease_crit      = 0.5
      logical          :: disease           = .false.
-
+     ! End: parameters
   end type parameters
 
-
+  ! Begin: keys
   character(len=30),parameter,public :: key_init_pop         = "initial_population"
   character(len=30),parameter,public :: key_mean_child_age   = "birth_age"
   character(len=30),parameter,public :: key_calc_len         = "duration"
@@ -86,7 +88,8 @@ module io
   character(len=30),parameter,public :: key_disease_init     = "disease_init_pop"
   character(len=30),parameter,public :: key_disease_crit     = "disease_critical_mass"
   character(len=30),parameter,public :: key_disease          = "disease"
-  
+  ! End: keys
+
   type life_table
      real(dp),dimension(0:100)  :: life_data
      integer                    :: year
@@ -119,8 +122,8 @@ module io
   
 
 
-
-  integer,parameter                        :: max_keys=19
+  ! No. Parameter keys
+  integer,parameter                        :: max_keys = 19
 
 
   !-------------------------------------------------------!
@@ -318,6 +321,7 @@ contains
           key=adjustl(trim(io_case(key)))
           param=adjustl(trim(io_case(param)))
 
+          ! Begin: case_read
           select case(key)
           case(key_init_pop)
              read(param,*,iostat=stat) dummy_params%init_pop
@@ -400,6 +404,7 @@ contains
                 call io_errors("Error in I/O: Error parsing value: "//param)
              end if
              present_array(i)=key
+             ! End: case_read
           case default
              call io_errors("Error in I/O: Error parsing keyword: "//key)
           end select
@@ -742,6 +747,7 @@ contains
        write(*,30) "-h,--help   <keyword>","Get help and commandline options."
        write(*,30) "-s,--search <keyword>", "Search list of available parameters"
        write(*,30) "-l,--list","Get list of parameters avilable for the user."
+       write(*,30) "-d,--dryrun","Run calculation to check input files"
     end if
     return
   end subroutine io_help
@@ -809,6 +815,7 @@ contains
 
 
     ! assign the keys
+    ! Begin: assign_keys
     keys_array(1)=trim(key_calc_len)
     keys_array(2)=trim(key_init_pop)
     keys_array(3)=trim(key_mean_child_age)
@@ -828,8 +835,9 @@ contains
     keys_array(17)=trim(key_disease)
     keys_array(18)=trim(key_init_demo)
     keys_array(19)=trim(key_write_demo)
+    ! End: assign_keys
 
-
+    ! Begin: assign_default
     write(junk,*)current_params%calc_len 
     keys_default(1)=trim(adjustl(junk))
     write(junk,*)current_params%init_pop 
@@ -868,7 +876,9 @@ contains
     keys_default(18)=trim(adjustl(junk))
     write(junk,*)current_params%write_demo
     keys_default(19)=trim(adjustl(junk))
+    ! End: assign_default
 
+    ! Begin: assign_description
     keys_description(1)="Length of the calculation in years"
     keys_description(2)="Initial total population, combined men and women"
     keys_description(3)="Mean age for a woman to have a child, modelled as a Gaussian"
@@ -888,8 +898,9 @@ contains
     keys_description(17)="Toggle for running a calculation with disease"
     keys_description(18)="Initialise the population from the final demographics of a previous calculation"
     keys_description(19)="Write demographic data to file 'demographics.pop'"
+    ! End: assign_description
     
-    !do the allowed values now
+    ! Begin: assign_allowed
     keys_allowed(1)= "(any integer) > 0"
     keys_allowed(2)= "(any integer) > 0"
     keys_allowed(3)= "(any integer) > 0"
@@ -909,7 +920,7 @@ contains
     keys_allowed(17)= "Boolean"
     keys_allowed(18)= "DEFAULT,CONTINUATION"
     keys_allowed(19)= "Boolean"
-
+    ! End: assign_allowed
     
     ! do the loop for printing stuff
 
@@ -1068,6 +1079,7 @@ contains
 11  format(1x,A,T44,":",5x,f12.2,1x,A)  !real
 12  format(1x,A,T44,":",5x,L12,1x,A)    !logical
 13  format(1x,A,T44,":",5x,A12,1x,A)    !character
+14  format(1x,A,T44,":",5x,ES12.2,1x,A)  !Science 
 
 
 
@@ -1083,9 +1095,8 @@ contains
     sec_title="Calculation Parameters"
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
-
-    write(stdout,10) "Initial Population", current_params%init_pop
-    write(stdout,10)"Calculation Length",current_params%calc_len,"years"
+    write(stdout,14) "Initial Population", real(current_params%init_pop)
+    write(stdout,14)"Calculation Length",real(current_params%calc_len),"years"
     if (current_params%init_demo)then
 
        write(stdout,13)"Demographics Initialisation","Previous Run"

@@ -522,16 +522,19 @@ contains
     implicit none
     integer   :: age
     real(dp)  :: prob
-
+    call trace_entry("life_init_demo")
     prob=integrand(real(age+1,dp))-integrand(real(age,dp))
     !print*,integrand(100._dp)-integrand(0._dp)
+    call trace_exit("life_init_demo")
   contains
     function integrand(limit) result(lim_val)
       implicit none
       real(dp)   :: limit
       real(dp)   :: lim_val
+      !call trace_entry("life_integrand")
       lim_val=(-1.5_dp*1_dp/1000_dp)*(100-limit)**1.5/1.5_dp!*1.0099_dp
       !lim_val=0.02_dp*limit-0.00009901_dp*limit**2
+      !call trace_exit("life_integrand")
     end  function integrand
   end function life_init_demo
 

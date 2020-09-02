@@ -1,5 +1,4 @@
 !---- File documented by Fortran Documenter, Z.Hawkhead
-!---- File documented by Fortran Documenter, Z.Hawkhead
 !=============================================================================!
 !                                 T R A C E                                   !
 !=============================================================================!
@@ -150,8 +149,7 @@ contains
     call CPU_TIME(time)
     ! check for comms
     if (index(sub_name,"COMMS").gt.0) comms_end_time=comms_end_time+time
-    if (index(sub_name,"IO_").gt.0) io_end_time=io_end_time+time
-
+    if (index(sub_name,"io_").gt.0) io_end_time=io_end_time+time
     !set the things to the last array elemen
 
 
@@ -212,7 +210,7 @@ contains
     !!print*,exit_array
     parent_array(size(parent_array))=0
     !!print*,parent_array
-
+    print*,io_start_time,io_end_time
 
      !allocate(temp_real_array(1:size(entry_time_array)-1))
      !temp_real_array(1:size(entry_time_array))=entry_time_array
@@ -502,11 +500,11 @@ contains
 
     write(file_id,*) "|                                                                                  |"
     write(file_id,*) "+==================================================================================+"
-    write(file_id,*) "|       Subroutine:                 Call Count:                  Time:             |"
+    write(file_id,*) "|       Subroutine:                                    Call Count:       Time:     |"
     write(file_id,*) "+==================================================================================+"
 
 
-19  format(1x,"|",3x,A25,10x,i5,19x,f10.4,1x,"s",8x,"|")
+19  format(1x,"|",3x,A25,T63,i5,T71,f10.5,1x,"s",T85,"|")
     do i=1,size(subs_list)
        write(file_id,19) adjustl(subs_list(i)),call_list(i),time_list(i)
 
@@ -602,45 +600,64 @@ contains
     ! Author:   Z. Hawkhead  21/01/2020                                            !
     !==============================================================================!
     implicit none
-    integer :: file_id,temp_int,i,width,width2
-    character(len=100) :: fmt_str,fmt_str2
+    integer :: file_id,temp_int,i,width,width2,k
+    character(len=100) :: fmt_str,fmt_str2,fmt_for,fmt_bk,fmt_po
+    character(len=20)  :: forward, back, point
     !print*,"parents start"
 
     !39  format(1x,"|",4x,<temp_int>x,A,1x,A,<width>x"|")
     !38  format(1x,"|",3x,<temp_int>x,A,<width2>x"|")
 
 
-    write(file_id,*) "|                                    Call Log:                                     |"
+    write(file_id,'(" |",T8,A,T75,A,T85,"|")')"Call Log:","Time:"
     write(file_id,*) "+==================================================================================+"
 
-
-
-
+    
+    
+    
     do i=1,size(parent_array)-1
 
        temp_int=2*parent_array(i)
-       width=82-4-temp_int-3-1-len(entry_array(i))
-       width2=82-4-temp_int
+       width=82-4-temp_int-3-1-len(entry_array(i))-10
+       width2=82-4-temp_int 
+      
+       ! Set up the characters that start the line
        if (temp_int.eq.0)then
-          write(fmt_str,'(A,i0,A,A)') '(1x,"|",4x,A,1x,A,',width,'x,"|")'
-          write(fmt_str2,'(A,i0,A,A)') '(1x,"|",3x,A,',width2,'x,"|")'
+          !skip
+          write(point,*)"o->"
+          write(back,*)" |\ "
+          write(forward,*)" |/"
+       else
+          write(back,*) (" |",k=1,temp_int/2),"\ "
+          write(point,*) ("| ", k=1,temp_int/2),"o->"
+          write(forward,*) (" |",k=1,temp_int/2),"/ "
+          
+       end if
+
+       
+       if (temp_int.eq.0)then
+          write(fmt_str,*) '(1x,"|",3x,A,1x,A,T71,f10.5,x,"s",T85,"|")'
+          write(fmt_str2,*) '(1x,"|",2x,A,T85,"|")'
        else
 
-          write(fmt_str,'(A,i0,A,i0,A)') '(1x,"|",4x,',temp_int,'x,A,1x,A,',width,'x,"|")'
-          write(fmt_str2,'(A,i0,A,i0,A)') '(1x,"|",3x,',temp_int,'x,A,',width2,'x,"|")'
+          write(fmt_str,*) '(1x,"|",3x,A,1x,A,T71,f10.5,x,"s",T85,"|")'
+          write(fmt_str2,*) '(1x,"|",2x,A,T85,"|")'
        end if
 
        !!print*,fmt_str
        !!print*,fmt_str2
 
        if (i.gt.1)then
-          if (parent_array(i).gt.parent_array(i-1)) write(file_id,trim(fmt_str2)) trim('\ ')
-
-
+          if (parent_array(i).gt.parent_array(i-1)) then
+             write(file_id,trim(fmt_str2)) trim(back)!trim('\ ')
+          end if
        end if
-       write(file_id,trim(fmt_str)) "o->",entry_array(i)
+       write(file_id,trim(fmt_str)) trim(point),entry_array(i),entry_time_array(i)
        if (parent_array(i).eq.parent_array(i+1)+1.and.i.lt.size(parent_array)-1)&
-            write(file_id,trim(fmt_str2)) "/"
+            then
+          write(file_id,trim(fmt_str2)) trim(forward)!"/"
+       end if
+       
     end do
 
 
