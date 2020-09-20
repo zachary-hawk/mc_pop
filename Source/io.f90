@@ -44,7 +44,7 @@ module io
 
      !Some extra functionality
      logical          :: dry_run           = .false.
-     logical          :: debug             = .false.
+     logical          :: debuging          = .false.
      integer          :: redistrib_freq    = 10
 
      logical          :: init_demo         = .false.
@@ -295,6 +295,7 @@ contains
     character(len=30) :: key         ! the keyword used
     character(len=30) :: param       ! the value of the param
     logical           :: comment     ! boolean for comment line, will skip
+    real(dp)          :: real_dump   ! a dump for handling scientific 
     call trace_entry("io_read_param")
 
     !Open the parameter file
@@ -324,7 +325,8 @@ contains
           ! Begin: case_read
           select case(key)
           case(key_init_pop)
-             read(param,*,iostat=stat) dummy_params%init_pop
+             read(param,*,iostat=stat) real_dump
+             dummy_params%init_pop=int(real_dump)
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_mean_child_age) 
@@ -332,7 +334,8 @@ contains
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_calc_len ) 
-             read(param,*,iostat=stat) dummy_params%calc_len
+             read(param,*,iostat=stat) real_dump
+             dummy_params%calc_len=int(real_dump)
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_life_table_year) 
@@ -348,7 +351,7 @@ contains
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_debug)
-             read(param,*,iostat=stat) dummy_params%debug
+             read(param,*,iostat=stat) dummy_params%debuging
              if (stat.ne.0) call io_errors("Error in I/O: Error parsing value: "//param)
              present_array(i)=key
           case(key_write_pop)
@@ -459,6 +462,8 @@ contains
 #ifdef life_dir
 #define life_str life_dir
 #endif 
+
+
     if(female)then
 
        write(name,'("f_life_table_",I0,".csv")',iostat=stat) current_params%life_table_year
@@ -858,7 +863,7 @@ contains
     keys_default(9)=trim(adjustl(junk))
     junk="RANDOMISED"  ! Special case
     keys_default(10)=trim(adjustl(junk))
-    write(junk,*)current_params%debug 
+    write(junk,*)current_params%debuging 
     keys_default(11)=trim(adjustl(junk))
     write(junk,*)current_params%life_table_year
     keys_default(12)=trim(adjustl(junk))
@@ -956,6 +961,8 @@ contains
     character(len=max_version_length) :: mpi_c_version
     character(len=3) :: MPI_version_num
     character(len=100):: compile_version,cpuinfo
+    character(len=5) :: opt
+    
     call trace_entry("io_header")
 
 
@@ -979,6 +986,11 @@ contains
     !#define compile_version __VERSION__
 #endif
 
+
+    
+#define opt opt_strat
+
+    
 
     compile_version=compiler_version()
     if (compiler.eq."Intel Compiler")then
@@ -1006,6 +1018,7 @@ contains
     if (comms_arch.eq."MPI")then
        write(stdout,*) "MPI Version: ",mpi_c_version(1:min_char+1)
     end if
+    write(stdout,*) "Optimisation Strategy: ",opt
     write(stdout,*)
     call trace_exit("io_header")
   end subroutine io_header
@@ -1038,7 +1051,7 @@ contains
     call trace_exit("io_dryrun")
     call trace_exit("mc_pop")
     call COMMS_FINALISE()
-    call trace_finalise(current_params%debug,rank)
+    call trace_finalise(current_params%debuging,rank)
     stop
 
   end subroutine io_dryrun
@@ -1144,7 +1157,7 @@ contains
     length=len(trim(sec_title))
     write(stdout,*)repeat("-",(width-length)/2-2)//"  "//trim(sec_title)//" "//repeat("-",(width-length)/2-2)
     write(stdout,10) "Redistribition Frequency",current_params%redistrib_freq, "years"
-    write(stdout,12) "Profilling",current_params%debug
+    write(stdout,12) "Profilling",current_params%debuging
     write(stdout,10) "Random Seed",current_params%random_seed
     if(comms_arch.eq."MPI")then
        sec_title="Parallelisation Parameters"

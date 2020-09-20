@@ -12,7 +12,7 @@ program mc_pop
   type(human),dimension(:),allocatable   :: population_women
   integer                                :: stat_pop
   integer                                :: i,j,k            ! Some boring counters
-  integer                                :: babies=0,deaths,prev_babies
+  integer                                :: babies=0,deaths=0,prev_babies=0
   integer                                :: year
   logical                                :: survived                 ! Flag for if people survived
   ! All the population counters
@@ -116,7 +116,7 @@ program mc_pop
 
 
 
-  do i=0,size(population_men)
+  do i=0,size(population_men)-1
      population_men(i)%is_female=.false.
      population_men(i)%age=i
      population_men(i)%no_people=0
@@ -435,7 +435,7 @@ program mc_pop
 
 
   current_time=comms_wtime()
-  call trace_finalise(current_params%debug,rank)
+  call trace_finalise(current_params%debuging,rank)
   call comms_reduce(global_time,time,1,"MPI_MAX")
 
 

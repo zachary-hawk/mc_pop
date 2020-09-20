@@ -210,7 +210,7 @@ contains
     !!print*,exit_array
     parent_array(size(parent_array))=0
     !!print*,parent_array
-    print*,io_start_time,io_end_time
+
 
      !allocate(temp_real_array(1:size(entry_time_array)-1))
      !temp_real_array(1:size(entry_time_array))=entry_time_array
@@ -382,8 +382,8 @@ contains
     !print*, "sort start"
     allocate(temp_array(1:size(array_to_sort)))
     allocate(temp_array_char(1:size(array_to_sort)))
-
-
+    allocate(temp_count(1:size(count_array)))
+    
 
     do j=1,size(array_to_sort)-1
        do i=1,size(array_to_sort)-j

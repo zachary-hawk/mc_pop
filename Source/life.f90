@@ -43,14 +43,14 @@ contains
     type(human), intent(inout)   :: age_group
 
     integer,     intent(inout),optional :: teen_babies
-    real(dp),    intent(in)      :: diff
+    real(dp),    intent(in)             :: diff
     !Some internal variables
-    integer                      :: person !The loop variable for the people
-    real(dp)                     :: rand
-    real(dp)                     :: death_prob
-    integer                      :: age_counter
-    real(dp),allocatable         :: age_range(:)
-    integer                      :: group_babies
+    integer                             :: person !The loop variable for the people
+    real(dp)                            :: rand
+    real(dp)                            :: death_prob
+    integer                             :: age_counter
+    real(dp),allocatable,dimension(:)   :: age_range
+    integer                             :: group_babies
 
     ! set group babies to 0
     group_babies=0
@@ -63,7 +63,7 @@ contains
        allocate(baby_prob(0:100))
        allocate(age_range(0:100))
        age_range=(/(real(age_counter,dp),age_counter=0,100)/)
-       call life_gaussian(age_range,real(current_params%child_age,dp),&
+       call life_gaussian(age_range(:),real(current_params%child_age,dp),&
             & current_params%child_sd,current_params%child_norm,baby_prob)
     end if
 
@@ -173,7 +173,6 @@ contains
        else
           age_prob=pop_buff*life_init_demo(species_array(i)%age)
           species_array(i)%no_people=int(age_prob)
-
        end if
     end do
     call trace_exit("life_init_pop")
@@ -362,7 +361,7 @@ contains
     integer  :: age
 
     call trace_entry("life_gaussian")
-    do age=0,size(prob)
+    do age=1,size(prob)
        prob(age)=norm/(stdev*sqrt(2_dp*pi))*&
             & exp(-0.5_dp*((mean-x(age))/stdev)**2)
     end do
