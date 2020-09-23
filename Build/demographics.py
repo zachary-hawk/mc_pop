@@ -9,7 +9,7 @@ try:
 except:
     bins=5
 
-f = FortranFile("demographics.pop",'r')
+f = FortranFile("demographics.pop",'r', '>u4')
 n=f.read_record([('len','i')])
 n=n['len'][0]
 data_scale=202

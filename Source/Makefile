@@ -23,7 +23,7 @@ FCFLAGS= -convert big_endian -assume norealloc_lhs -diag-disable 8290 -diag-disa
 endif
 endif
 
-
+#FCFLAGS= -O1  -funroll-loops -p -g
 
 ifeq ($(COMMS_ARCH),mpi)
 

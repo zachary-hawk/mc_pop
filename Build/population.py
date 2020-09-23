@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.io import FortranFile
 
 # Read in the population file
-population = FortranFile('population.pop', 'r')
+population = FortranFile('population.pop', 'r', '>u4')
 population_dat=population.read_ints()
 population.close()
 years=np.arange(0,len(population_dat))
@@ -17,7 +17,7 @@ plt.ylabel("Population")
 
 
 try:
-    age=FortranFile('average_age.pop', 'r')
+    age=FortranFile('average_age.pop', 'r', '>u4')
     age_dat=age.read_reals()
     age.close()
     years=np.arange(0,len(age_dat))
@@ -33,7 +33,7 @@ except:
 
 
 try:
-    age=FortranFile('birth_rate.pop', 'r')
+    age=FortranFile('birth_rate.pop', 'r', '>u4')
     age_dat=age.read_reals()
     age.close()
     years=np.arange(0,len(age_dat))
