@@ -9,13 +9,13 @@ BUILD_DIR = ./Build
 # User editable options
 
 # Communications architectiure: mpi,serial
-COMMS_ARCH:=mpi
+COMMS_ARCH:=serial
 
 # Fortran compiler, allowed: ifort, gfortran
-F90:=ifort
+F90:=gfortran
 
 # Speed of the build, allowed: fast, debug
-BUILD= debug
+BUILD= fast
 
 
 ########################################
